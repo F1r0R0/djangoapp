@@ -206,10 +206,15 @@
 {% endif %}
 
   {% if messages %}
-    <div class="fixed top-4 right-4 z-50 space-y-2">
+    <div id="toast-stack" class="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
       {% for message in messages %}
-        <div class="toast px-4 py-3 rounded-xl shadow-lg text-sm {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
-          {{ message }}
+        <div class="toast flex items-start gap-3 pl-4 pr-2 py-3 rounded-xl shadow-lg text-sm transition-all duration-300 {% if message.level_tag == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}"
+             data-extra="{{ message.extra_tags }}">
+          <span class="flex-1 leading-snug">{{ message }}</span>
+          <span class="toast-action"></span>
+          <button type="button" class="toast-close opacity-50 hover:opacity-100 w-6 h-6 rounded flex items-center justify-center" aria-label="Закрыть">
+            <i class="fas fa-times text-xs"></i>
+          </button>
         </div>
       {% endfor %}
     </div>
@@ -245,6 +250,9 @@
 {% endif %}
 
 <script>
+  // CSRF helper for inline JS-built forms (toast undo, calendar quick-create).
+  window.__csrfToken = "{{ csrf_token }}";
+
   // Close any data-modal on backdrop-click or Escape, with the CSS transition baked in.
   document.addEventListener('click', (e) => {
     if (e.target && e.target.matches && e.target.matches('[data-modal]')) {
@@ -267,6 +275,54 @@
       requestAnimationFrame(() => { el.style.height = h + '%'; });
     });
   });
+
+  // ----- Toasts: render undo button from message.extra_tags JSON, auto-dismiss -----
+  (function () {
+    const stack = document.getElementById('toast-stack');
+    if (!stack) return;
+    const dismiss = (toast) => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(10px)';
+      setTimeout(() => toast.remove(), 300);
+    };
+    stack.querySelectorAll('.toast').forEach(toast => {
+      const closeBtn = toast.querySelector('.toast-close');
+      if (closeBtn) closeBtn.addEventListener('click', () => dismiss(toast));
+
+      const raw = toast.getAttribute('data-extra') || '';
+      const slot = toast.querySelector('.toast-action');
+      if (raw && slot) {
+        try {
+          const meta = JSON.parse(raw);
+          if (meta && meta.undo) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = meta.undo;
+            form.className = 'inline-flex';
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = 'csrfmiddlewaretoken';
+            csrf.value = window.__csrfToken || '';
+            form.appendChild(csrf);
+            const nxt = document.createElement('input');
+            nxt.type = 'hidden';
+            nxt.name = 'next';
+            nxt.value = window.location.pathname + window.location.search;
+            form.appendChild(nxt);
+            const btn = document.createElement('button');
+            btn.type = 'submit';
+            btn.className = 'px-2 py-1 text-xs font-semibold underline hover:no-underline';
+            btn.textContent = meta.label || 'Отменить';
+            form.appendChild(btn);
+            slot.appendChild(form);
+          }
+        } catch (_) { /* not JSON, ignore */ }
+      }
+      // Auto-dismiss: longer when the toast has an actionable undo button.
+      const hasUndo = !!toast.querySelector('.toast-action form');
+      setTimeout(() => dismiss(toast), hasUndo ? 8000 : 5000);
+    });
+  })();
 </script>
 {% block scripts %}{% endblock %}
 </body>
