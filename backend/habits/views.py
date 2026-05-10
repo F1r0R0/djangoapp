@@ -7,20 +7,13 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
-from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from habits.forms import HabitForm, LoginForm, RegisterForm
-from habits.models import (
-    Achievement,
-    Habit,
-    HabitLog,
-    UserAchievement,
-    UserInsight,
-)
+from habits.models import Achievement, Habit, HabitLog, UserAchievement, UserInsight
 from habits.services.analytics import (
     completion_rate_for_habit,
     habit_completed_count,
@@ -78,14 +71,9 @@ def landing(request):
 def dashboard(request):
     today: date = timezone.localdate()
     habits = list(
-        Habit.objects.filter(user=request.user, is_active=True)
-        .select_related('schedule')
-        .prefetch_related('tags')
+        Habit.objects.filter(user=request.user, is_active=True).select_related('schedule').prefetch_related('tags')
     )
-    logs_today = {
-        log.habit_id: log
-        for log in HabitLog.objects.filter(user=request.user, log_date=today)
-    }
+    logs_today = {log.habit_id: log for log in HabitLog.objects.filter(user=request.user, log_date=today)}
     items = []
     due_today = 0
     done_today = 0
@@ -98,19 +86,23 @@ def dashboard(request):
             due_today += 1
         if is_done:
             done_today += 1
-        items.append({
-            'habit': habit,
-            'is_due': is_due,
-            'is_done': is_done,
-            'log': log,
-        })
+        items.append(
+            {
+                'habit': habit,
+                'is_due': is_due,
+                'is_done': is_done,
+                'log': log,
+            }
+        )
 
     # Mini month calendar with intensity.
     cal_start = today.replace(day=1)
     next_month = cal_start.replace(day=28) + timedelta(days=4)
     cal_end = next_month - timedelta(days=next_month.day)
     cal_logs = HabitLog.objects.filter(
-        user=request.user, log_date__gte=cal_start, log_date__lte=cal_end,
+        user=request.user,
+        log_date__gte=cal_start,
+        log_date__lte=cal_end,
         status__in=['done', 'partial'],
     ).values_list('log_date', flat=True)
     cal_active = set(cal_logs)
@@ -121,18 +113,22 @@ def dashboard(request):
     pad_start = cal_start - timedelta(days=start_offset)
     cursor = pad_start
     while cursor <= cal_end or cursor.isoweekday() != 1:
-        calendar_cells.append({
-            'date': cursor,
-            'in_month': cursor.month == today.month,
-            'has_activity': cursor in cal_active,
-            'is_today': cursor == today,
-        })
+        calendar_cells.append(
+            {
+                'date': cursor,
+                'in_month': cursor.month == today.month,
+                'has_activity': cursor in cal_active,
+                'is_today': cursor == today,
+            }
+        )
         cursor += timedelta(days=1)
         if len(calendar_cells) >= 42:
             break
 
     weekly_total = HabitLog.objects.filter(
-        user=request.user, log_date__gte=today - timedelta(days=6), log_date__lte=today,
+        user=request.user,
+        log_date__gte=today - timedelta(days=6),
+        log_date__lte=today,
     )
     wt_total = weekly_total.count() or 1
     wt_done = weekly_total.filter(status__in=['done', 'partial']).count()
@@ -217,6 +213,23 @@ def habit_detail(request, habit_id: int):
     for cell in heatmap:
         by_weekday[cell['date'].isoweekday() - 1].append(cell)
 
+    # Last 7 days intensity (Mon..Sun bar chart on the detail page).
+    last7_logs = habit.logs.filter(log_date__gte=today - timedelta(days=6))
+    weekday_minutes = [0] * 7
+    for log in last7_logs:
+        if log.status in {'done', 'partial'}:
+            idx = log.log_date.isoweekday() - 1
+            weekday_minutes[idx] += log.duration_minutes or habit.target_value or 1
+    max_min = max(weekday_minutes) or 1
+    intensity_bars = [
+        {
+            'label': label,
+            'minutes': mins,
+            'pct': max(int(100 * mins / max_min), 8 if mins else 4),
+        }
+        for label, mins in zip(['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'], weekday_minutes)
+    ]
+
     history = habit.logs.order_by('-log_date')[:8]
 
     context = {
@@ -230,6 +243,7 @@ def habit_detail(request, habit_id: int):
         'current_streak': habit_current_streak(habit),
         'best_streak': habit_best_streak(habit),
         'heatmap_rows': by_weekday,
+        'intensity_bars': intensity_bars,
         'history': history,
     }
     return render(request, 'habit_detail.html', context)
@@ -244,9 +258,7 @@ def analytics(request):
     breakdown = user_category_breakdown(request.user, days=days)
     insights = UserInsight.objects.filter(user=request.user).order_by('-created_at')[:5]
     achievements = Achievement.objects.all()
-    unlocked_ids = set(
-        UserAchievement.objects.filter(user=request.user).values_list('achievement_id', flat=True)
-    )
+    unlocked_ids = set(UserAchievement.objects.filter(user=request.user).values_list('achievement_id', flat=True))
     achievements_data = [
         {
             'achievement': a,
@@ -265,22 +277,26 @@ def analytics(request):
     cumulative = 0
     palette = ['#4CAF50', '#FFB74D', '#64B5F6', '#BA68C8', '#FF8A65', '#F06292']
     for idx, row in enumerate(breakdown):
-        chart_categories.append({
-            **row,
-            'color': palette[idx % len(palette)],
-            'offset': cumulative,
-        })
+        chart_categories.append(
+            {
+                **row,
+                'color': palette[idx % len(palette)],
+                'offset': cumulative,
+            }
+        )
         cumulative += row['pct']
 
     # Find best/weak day for the highlight card.
     best_day = best_days[0] if best_days else None
     morning_done = HabitLog.objects.filter(
-        user=request.user, status__in=['done', 'partial'],
+        user=request.user,
+        status__in=['done', 'partial'],
         log_date__gte=timezone.localdate() - timedelta(days=days - 1),
         created_at__hour__lt=12,
     ).count()
     total_done = HabitLog.objects.filter(
-        user=request.user, status__in=['done', 'partial'],
+        user=request.user,
+        status__in=['done', 'partial'],
         log_date__gte=timezone.localdate() - timedelta(days=days - 1),
     ).count()
     morning_pct = int(100 * morning_done / total_done) if total_done else 0

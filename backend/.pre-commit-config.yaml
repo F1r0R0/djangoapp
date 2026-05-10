@@ -42,6 +42,7 @@ repos:
     rev: 23.3.0
     hooks:
     -   id: black
+        args: [--line-length=120, --skip-string-normalization]
 
 -   repo: https://github.com/asottile/pyupgrade
     rev: v3.4.0
@@ -62,5 +63,6 @@ repos:
           - Flake8-pyproject
         exclude: '(.+settings.+)|(__init__\.py)'
         args: [
+          --max-line-length=120,
           --ignore=W503 E731 E203
         ]

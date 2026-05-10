@@ -64,6 +64,9 @@
     <a href="{% url 'dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
       <i class="fas fa-th-large w-5"></i> Дашборд
     </a>
+    <a href="{% url 'dashboard' %}#calendar" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600">
+      <i class="fas fa-calendar w-5"></i> Календарь
+    </a>
     <a href="{% url 'analytics' %}" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
       <i class="fas fa-chart-line w-5"></i> Аналитика
     </a>
@@ -71,6 +74,10 @@
       <i class="fas fa-cog w-5"></i> Настройки
     </a>
   </nav>
+  <button onclick="document.querySelector('[data-modal=add]')?.classList.add('open')"
+          class="mt-4 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-semibold shadow-sm">
+    <i class="fas fa-plus"></i> Новая привычка
+  </button>
   <div class="mt-auto pt-6 border-t border-gray-100 flex items-center gap-3">
     <img src="{% static 'img/mascot.png' %}" class="w-10 h-10 rounded-full" alt="Mascot">
     <div class="flex-1 min-w-0">
@@ -104,6 +111,7 @@
 </div>
 
 {% if user.is_authenticated %}
+{% include "includes/add_habit_modal.html" %}
 <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 md:hidden z-30">
   <div class="max-w-7xl mx-auto px-4 flex justify-around">
     <a href="{% url 'dashboard' %}" class="flex flex-col items-center gap-1 {% if request.resolver_match.url_name == 'dashboard' %}text-green-600{% else %}text-gray-500{% endif %}">

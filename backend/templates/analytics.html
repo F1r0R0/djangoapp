@@ -16,29 +16,33 @@
 </header>
 
 <div class="grid lg:grid-cols-3 gap-6 mb-6">
-  <!-- Highlight insight card -->
-  <div class="lg:col-span-2 glass-card p-6 bg-gradient-to-br from-green-700 via-green-600 to-green-500 text-white relative overflow-hidden">
-    <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center mb-4">
-      <i class="fas fa-lightbulb text-2xl"></i>
+  <!-- Highlight insight card (amber/orange to match prototype) -->
+  <div class="lg:col-span-2 glass-card p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-orange-400 relative overflow-hidden">
+    <div class="flex flex-col sm:flex-row sm:items-start gap-4">
+      <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-lightbulb text-orange-600 text-xl"></i>
+      </div>
+      <div class="flex-1">
+        <h2 class="text-xl md:text-2xl font-bold text-gray-800 leading-snug">
+          {% if morning_pct > 0 %}
+            Вероятность выполнения утром у тебя на {{ morning_pct }}% выше! ☀️
+          {% else %}
+            Каждый шаг — это шаг к лучшей версии тебя.
+          {% endif %}
+        </h2>
+        <p class="text-gray-700 mt-3 max-w-xl">
+          {% if best_day %}
+            {{ best_day.name }} — твой пик ({{ best_day.rate }}%). Планируй сложные задачи в это «золотое окно».
+          {% else %}
+            Отметь хотя бы одну привычку — и я подскажу твои паттерны.
+          {% endif %}
+        </p>
+        <button class="mt-4 px-5 py-2 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 shadow-sm flex items-center gap-2">
+          <i class="fas fa-chart-simple"></i> Оптимизировать день
+        </button>
+      </div>
     </div>
-    <h2 class="text-2xl font-bold leading-snug max-w-md">
-      {% if morning_pct > 0 %}
-        Вероятность выполнения утром у тебя на {{ morning_pct }}% выше! ☀️
-      {% else %}
-        Каждый шаг — это шаг к лучшей версии тебя.
-      {% endif %}
-    </h2>
-    <p class="text-white/90 mt-3 max-w-md">
-      {% if best_day %}
-        {{ best_day.name }} — твой пик ({{ best_day.rate }}%). Планируй сложные задачи в это «золотое окно».
-      {% else %}
-        Отметь хотя бы одну привычку — и я подскажу твои паттерны.
-      {% endif %}
-    </p>
-    <button class="mt-5 px-5 py-2.5 bg-white text-green-700 rounded-xl font-semibold hover:bg-green-50">
-      Оптимизировать день
-    </button>
-    <img src="{% static 'img/mascot.png' %}" class="w-32 h-32 absolute -bottom-4 -right-4 opacity-90 hidden md:block">
+    <img src="{% static 'img/mascot.png' %}" class="w-24 h-24 absolute -bottom-2 -right-2 opacity-80 hidden lg:block">
   </div>
 
   <!-- Donut: categories -->
@@ -163,7 +167,6 @@
   </div>
 {% endif %}
 
-{% include "includes/add_habit_modal.html" %}
 {% endblock %}
 
 {% block scripts %}

@@ -25,11 +25,11 @@
 
 <!-- Welcome / week stream banner -->
 <div class="grid lg:grid-cols-3 gap-4 mb-6">
-  <div class="lg:col-span-2 glass-card relative overflow-hidden p-6 bg-gradient-to-r from-green-100 via-green-50 to-orange-50">
-    <div class="flex items-start gap-4">
-      <div>
-        <h2 class="text-2xl font-bold mb-1">Твой недельный поток</h2>
-        <p class="text-gray-600">Визуализируй свой успех шаг за шагом! 🐹</p>
+  <div class="lg:col-span-2 glass-card relative overflow-hidden p-6 bg-gradient-to-r from-green-200 via-green-100 to-orange-50">
+    <div class="flex items-start gap-4 relative z-10">
+      <div class="flex-1">
+        <h2 class="text-2xl md:text-3xl font-bold mb-1 font-display">Твой недельный поток</h2>
+        <p class="text-gray-700">Визуализируй свой успех шаг за шагом! 🐹</p>
         <div class="mt-4 flex flex-wrap gap-3 text-sm">
           <span class="px-3 py-1.5 rounded-full bg-white/80 border border-green-200 text-green-700 font-semibold">
             <i class="fas fa-fire-flame-curved text-orange-500 mr-1"></i>Серия {{ profile.current_streak }} дн.
@@ -42,16 +42,15 @@
           </span>
         </div>
       </div>
-      <img src="{% static 'img/mascot.png' %}" class="w-28 h-28 ml-auto hidden sm:block" alt="">
+      <img src="{% static 'img/mascot.png' %}" class="w-28 h-28 hidden sm:block self-end -mr-2 -mb-2" alt="">
     </div>
   </div>
-  <div class="glass-card p-6 flex flex-col justify-center items-center text-center">
-    <div class="text-xs text-gray-500 uppercase">Прогресс недельной цели</div>
+  <div class="glass-card p-6 flex flex-col justify-center text-center">
+    <div class="text-xs text-gray-500 uppercase tracking-wider">Прогресс недельной цели</div>
     <div class="text-5xl font-bold mt-2 text-gray-800">{{ weekly_completion_rate }}%</div>
-    <div class="mt-3 w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-      <div class="h-full bg-green-500" style="width: {{ weekly_completion_rate }}%"></div>
+    <div class="mt-4 px-4 py-2 rounded-full bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold shadow-sm">
+      {{ wt_done }} из {{ wt_total_real }} отметок
     </div>
-    <div class="text-xs text-gray-500 mt-2">{{ wt_done }} из {{ wt_total_real }} отметок</div>
   </div>
 </div>
 
@@ -124,7 +123,7 @@
   </div>
 
   <!-- Mini calendar -->
-  <aside>
+  <aside id="calendar" class="scroll-mt-20">
     <div class="glass-card p-4">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-lg font-bold font-display">{{ calendar_month|date:"F Y"|capfirst }}</h3>
@@ -167,7 +166,6 @@
   </aside>
 </div>
 
-{% include "includes/add_habit_modal.html" %}
 {% endblock %}
 
 {% block scripts %}
