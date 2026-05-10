@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Архив привычек — HabitHamster{% endblock %}
+
+{% block content %}
+<header class="flex flex-wrap items-center justify-between gap-4 mb-6 anim-fade-up">
+  <div>
+    <h1 class="text-3xl font-bold font-display">Архив</h1>
+    <p class="text-sm text-gray-500 mt-1">Привычки, которые ты архивировал. История выполнений сохранена.</p>
+  </div>
+  <a href="{% url 'dashboard' %}" class="text-sm text-gray-500 hover:text-green-600 inline-flex items-center gap-1.5">
+    <i class="fas fa-arrow-left"></i> К дашборду
+  </a>
+</header>
+
+{% if items %}
+  <div class="space-y-3 stagger">
+  {% for item in items %}
+    <div class="glass-card habit-card p-4 flex flex-wrap items-center gap-4 lift">
+      <a href="{% url 'habit_detail' item.habit.id %}" class="flex items-center gap-4 flex-1 min-w-0">
+        <div class="w-12 h-12 rounded-full bg-{{ item.habit.color }}-100 flex items-center justify-center flex-shrink-0 opacity-70">
+          <i class="fas fa-{{ item.habit.icon }} text-{{ item.habit.color }}-600 text-xl"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="font-semibold truncate flex items-center gap-2">
+            {{ item.habit.title }}
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold uppercase tracking-wide">в архиве</span>
+          </div>
+          <div class="text-xs text-gray-500 mt-0.5 truncate">
+            {{ item.completed_count }} выполнений
+            {% if item.total_minutes %}• {{ item.total_minutes }} мин всего{% endif %}
+            • архивирована {{ item.habit.updated_at|date:"j E Y" }}
+          </div>
+        </div>
+      </a>
+      <div class="flex items-center gap-2">
+        <form method="post" action="{% url 'habit_restore' item.habit.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button class="px-3 py-1.5 text-sm text-green-700 hover:bg-green-50 rounded-lg flex items-center gap-1.5">
+            <i class="fas fa-rotate-left"></i> Восстановить
+          </button>
+        </form>
+        <form method="post" action="{% url 'habit_destroy' item.habit.id %}"
+              onsubmit="return confirm('Удалить «{{ item.habit.title|escapejs }}» вместе со всей историей? Действие нельзя отменить.')">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button class="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-1.5">
+            <i class="fas fa-trash"></i> Удалить
+          </button>
+        </form>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+{% else %}
+  <div class="glass-card p-8 text-center anim-pop">
+    <img src="{% static 'img/mascot_alt.png' %}" class="w-24 h-24 mx-auto opacity-90 mascot-bob" alt="">
+    <h3 class="font-bold text-lg mt-4">Архив пуст</h3>
+    <p class="text-sm text-gray-500 mt-1">Когда архивируешь привычку, она появится здесь. История выполнений останется доступной.</p>
+    <a href="{% url 'dashboard' %}" class="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600">
+      <i class="fas fa-th-large"></i> К дашборду
+    </a>
+  </div>
+{% endif %}
+{% endblock %}
