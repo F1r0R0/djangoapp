@@ -213,7 +213,6 @@ class HabitSchedule(models.Model):
     FREQUENCY_CHOICES = [
         ('daily', 'Ежедневно'),
         ('weekly', 'По дням недели'),
-        ('monthly', 'Ежемесячно'),
         ('custom', 'Кастомно'),
     ]
 

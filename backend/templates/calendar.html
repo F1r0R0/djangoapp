@@ -36,21 +36,31 @@
   .pill-red    { background: #FFCDD2; color: #C62828; }
   .pill-pink   { background: #F8BBD0; color: #AD1457; }
 
-  /* "Planned" (not done yet today) state — dashed outline. */
+  /* "Planned" (not done yet today) state — dashed outline + visibly faded. */
   .cal-pill.is-planned {
     background: transparent;
     border: 1.5px dashed currentColor;
-    opacity: .65;
+    opacity: .45;
   }
   .cal-pill.is-planned .cat,
   .cal-pill.is-planned .ttl { color: #6B7280; }
+  /* Done pills are fully opaque. */
+  .cal-pill { opacity: 1; }
 
   /* Hour cell label. */
   .cal-hour {
     font-size: 10px; color: #9CA3AF; text-align: right;
     padding: 6px 10px 0 0; min-height: 56px;
   }
-  .cal-slot { min-height: 56px; padding: 0; }
+  .cal-slot { min-height: 56px; padding: 0; position: relative; cursor: pointer; transition: background .15s ease; }
+  .cal-slot:hover { background: rgba(76, 175, 80, .06); }
+  .cal-slot[data-empty="1"]:hover::after {
+    content: '+ новая привычка';
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: #4CAF50; font-weight: 600;
+    pointer-events: none;
+  }
 
   /* Day header (weekday + date number). */
   .cal-day-head {
@@ -83,11 +93,19 @@
   .month-cell {
     border-right: 1px solid #F0EFEC; border-bottom: 1px solid #F0EFEC;
     padding: 6px 8px; min-height: 96px; background: #FFF; display: flex; flex-direction: column; gap: 4px;
+    cursor: pointer; transition: background .15s ease;
   }
+  .month-cell:hover { background: #FCFCFA; }
   .month-cell.out { background: #FAFAF8; color: #C0C0C0; }
   .month-cell .num { font-size: 13px; font-weight: 600; }
   .month-cell.today .num { color: #FFF; background: #4CAF50; border-radius: 999px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
-  .month-cell .mini-pill { font-size: 9px; padding: 1px 6px; border-radius: 6px; truncate: ellipsis; max-width: 100%; overflow: hidden; white-space: nowrap; }
+  .month-cell .mini-pill { font-size: 9px; padding: 1px 6px; border-radius: 6px; truncate: ellipsis; max-width: 100%; overflow: hidden; white-space: nowrap; opacity: 1; }
+  /* Same opacity rule for month-view mini-pills: not done = transparent, done = solid. */
+  .month-cell .mini-pill.is-planned {
+    background: transparent;
+    border: 1px dashed currentColor;
+    opacity: .45;
+  }
 </style>
 {% endblock %}
 
@@ -164,7 +182,8 @@
     </div>
     <div class="grid grid-cols-7">
       {% for cell in month_cells %}
-        <div class="month-cell {% if not cell.in_month %}out{% endif %} {% if cell.is_today %}today{% endif %}">
+        <div class="month-cell {% if not cell.in_month %}out{% endif %} {% if cell.is_today %}today{% endif %}"
+             data-month-cell="1" data-date="{{ cell.date|date:'Y-m-d' }}">
           <div class="flex items-center justify-between">
             <div class="num">{{ cell.date.day }}</div>
             {% if cell.extra_count %}
@@ -211,7 +230,9 @@
       {% for hour in hours %}
         <div class="cal-hour {% if forloop.last %}no-bb{% endif %}">{{ hour|stringformat:"02d" }}:00</div>
         {% for day in grid_days %}
-          <div class="cal-slot {% if forloop.last %}no-br{% endif %} {% if forloop.parentloop.last %}no-bb{% endif %}">
+          <div class="cal-slot {% if forloop.last %}no-br{% endif %} {% if forloop.parentloop.last %}no-bb{% endif %}"
+               data-cal-slot="1" data-hour="{{ hour }}" data-date="{{ day.date|date:'Y-m-d' }}"
+               data-empty="{% spaceless %}{% for slot in day.slots %}{% if slot.hour == hour %}{% if slot.pills %}0{% else %}1{% endif %}{% endif %}{% endfor %}{% endspaceless %}">
             {% for slot in day.slots %}{% if slot.hour == hour %}
               {% for pill in slot.pills %}
                 <a href="{% url 'habit_detail' pill.habit.id %}"
@@ -251,5 +272,52 @@
         title="Новая привычка">
   <i class="fas fa-plus"></i>
 </button>
+
+<script>
+  // Calendar quick-create: clicking any non-pill area of the time grid (or a
+  // month cell) opens the "new habit" modal with the window pre-filled.
+  // The modal is included from base.html after the content block, so we wait
+  // for DOMContentLoaded before binding handlers.
+  (function () {
+    const init = () => {
+      const modal = document.querySelector('[data-modal=add]');
+      if (!modal) return;
+      const winStart = modal.querySelector('input[name=window_start]');
+      const winEnd   = modal.querySelector('input[name=window_end]');
+      const titleInput = modal.querySelector('input[name=title]');
+      const hh = (h) => String(h).padStart(2, '0') + ':00';
+      const openModal = () => {
+        modal.classList.add('open');
+        if (titleInput) setTimeout(() => titleInput.focus(), 50);
+      };
+
+      document.querySelectorAll('.cal-slot[data-cal-slot]').forEach(slot => {
+        slot.addEventListener('click', (e) => {
+          // Don't intercept clicks that landed on an existing habit pill.
+          if (e.target.closest('a.cal-pill')) return;
+          const h = parseInt(slot.dataset.hour, 10);
+          if (!isNaN(h)) {
+            if (winStart) winStart.value = hh(h);
+            if (winEnd)   winEnd.value   = hh(Math.min(h + 1, 23));
+          }
+          openModal();
+        });
+      });
+
+      document.querySelectorAll('.month-cell[data-month-cell]').forEach(cell => {
+        cell.addEventListener('click', (e) => {
+          if (e.target.closest('a.mini-pill')) return;
+          // Month view doesn't carry an hour — leave window_* alone.
+          openModal();
+        });
+      });
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>
 
 {% endblock %}

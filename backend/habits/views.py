@@ -1,6 +1,7 @@
 """HTML views for HabitHamster."""
 from __future__ import annotations
 
+import json
 from datetime import date, datetime, timedelta
 
 from django.contrib import messages
@@ -8,7 +9,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -94,6 +95,7 @@ def dashboard(request):
                 'is_due': is_due,
                 'is_active_now': is_active_now,
                 'is_done': is_done,
+                'today_status': log.status if log else None,
                 'log': log,
             }
         )
@@ -259,11 +261,14 @@ def calendar_view(request):
         slot_time = None
         if schedule:
             slot_time = schedule.window_start or schedule.reminder_time
+        # Only fully-done logs count as opaque pills. Partial / skipped /
+        # unlogged habits render as faded "planned" pills.
+        is_done = bool(log and log.status == 'done')
         return {
             'habit': habit,
             'time': slot_time,
-            'is_done': bool(log and log.status in {'done', 'partial'}),
-            'is_planned': not bool(log and log.status in {'done', 'partial'}),
+            'is_done': is_done,
+            'is_planned': not is_done,
             'log': log,
         }
 
@@ -389,12 +394,26 @@ def habit_create(request):
     return redirect(request.POST.get('next') or 'dashboard')
 
 
+_STATUS_LABELS = {
+    'done': 'выполнено',
+    'partial': 'частично',
+    'skipped': 'пропущено',
+}
+
+
+def _undo_extra_tags(url: str, label: str = 'Отменить') -> str:
+    """Encode an undo action for a flash toast (parsed by base.html JS)."""
+    return json.dumps({'undo': url, 'label': label}, ensure_ascii=False)
+
+
 @login_required
 @require_POST
 def habit_log_today(request, habit_id: int):
     habit = get_object_or_404(Habit, id=habit_id, user=request.user)
     today = timezone.localdate()
     status = request.POST.get('status', 'done')
+    if status not in {'done', 'partial', 'skipped'}:
+        status = 'done'
     duration = int(request.POST.get('duration_minutes') or 0)
     note = request.POST.get('note', '')
     HabitLog.objects.update_or_create(
@@ -408,7 +427,12 @@ def habit_log_today(request, habit_id: int):
             'note': note,
         },
     )
-    messages.success(request, f'Отметка для "{habit.title}" сохранена ({status}).')
+    label = _STATUS_LABELS.get(status, status)
+    messages.success(
+        request,
+        f'Отметка для "{habit.title}" — {label}.',
+        extra_tags=_undo_extra_tags(reverse('habit_log_undo', args=[habit.id]), 'Отменить'),
+    )
     return redirect(request.POST.get('next') or 'dashboard')
 
 
@@ -417,9 +441,7 @@ def habit_log_today(request, habit_id: int):
 def habit_log_undo(request, habit_id: int):
     habit = get_object_or_404(Habit, id=habit_id, user=request.user)
     today = timezone.localdate()
-    deleted, _ = HabitLog.objects.filter(
-        habit=habit, user=request.user, log_date=today
-    ).delete()
+    deleted, _ = HabitLog.objects.filter(habit=habit, user=request.user, log_date=today).delete()
     if deleted:
         messages.success(request, f'Отметка "готово" для "{habit.title}" снята.')
     else:
@@ -433,7 +455,11 @@ def habit_delete(request, habit_id: int):
     habit = get_object_or_404(Habit, id=habit_id, user=request.user)
     habit.is_active = False
     habit.save(update_fields=['is_active', 'updated_at'])
-    messages.success(request, f'Привычка "{habit.title}" архивирована.')
+    messages.success(
+        request,
+        f'Привычка "{habit.title}" архивирована.',
+        extra_tags=_undo_extra_tags(reverse('habit_restore', args=[habit.id]), 'Вернуть'),
+    )
     return redirect(request.POST.get('next') or 'dashboard')
 
 
