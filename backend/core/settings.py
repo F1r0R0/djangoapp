@@ -66,6 +66,13 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # MUST be the OUTERMOST middleware: process_response runs in reverse order,
+    # so being first here means we push to Blob LAST — i.e. after
+    # SessionMiddleware has flushed the new session row to /tmp/db.sqlite3.
+    # Putting it any later (e.g. at the bottom of the list) means we'd upload
+    # the DB before the session is committed, and users would silently get
+    # logged out on the next cold start.
+    'core.middleware.BlobDBSyncMiddleware',
     'django.middleware.security.SecurityMiddleware',
     # Serve collected /static/ files via WSGI. In DEBUG mode WhiteNoise no-ops
     # (Django's runserver serves them); in production (Docker behind nginx,
@@ -77,10 +84,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # Push /tmp/db.sqlite3 to Vercel Blob after every successful write so
-    # admin edits / habit completions survive function cold starts. No-op when
-    # BLOB_READ_WRITE_TOKEN is absent (Docker / local dev).
-    'core.middleware.BlobDBSyncMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'

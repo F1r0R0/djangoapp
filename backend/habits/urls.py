@@ -9,6 +9,7 @@ urlpatterns = [
     path('accounts/logout/', views.HHLogoutView.as_view(), name='logout'),
     path('accounts/register/', views.register_view, name='register'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('calendar/', views.calendar_view, name='calendar'),
     path('habits/new/', views.habit_create, name='habit_create'),
     path('habits/<int:habit_id>/', views.habit_detail, name='habit_detail'),
     path('habits/<int:habit_id>/log/', views.habit_log_today, name='habit_log_today'),
