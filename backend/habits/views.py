@@ -381,7 +381,8 @@ def habit_create(request):
         form.save(user=request.user)
         messages.success(request, 'Привычка создана. Вперёд к серии!')
     else:
-        messages.error(request, 'Не удалось создать привычку: ' + str(form.errors))
+        errors = '; '.join(msg for msgs in form.errors.values() for msg in msgs)
+        messages.error(request, f'Не удалось создать привычку: {errors}')
     return redirect(request.POST.get('next') or 'dashboard')
 
 
