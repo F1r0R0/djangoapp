@@ -28,6 +28,7 @@ env = environ.Env(
     DEBUG=(bool, True),
     SECRET_KEY=(str, 'django-insecure-ijbynh6l)0^&6*+d$%=bmyr4s)y9uipf$ybnw)adp^bxrfc5k%'),
     ALLOWED_HOSTS=(list, ['*']),
+    CSRF_TRUSTED_ORIGINS=(list, []),
     USE_SQLITE=(bool, False),
     DB_NAME=(str, ''),
     DB_USER=(str, ''),
@@ -51,6 +52,12 @@ if IS_VERCEL:
     ALLOWED_HOSTS = ['.vercel.app', '.now.sh', 'localhost', '127.0.0.1']
     CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    # Outside Vercel (Docker / VPS): allow operators to add HTTPS-eligible
+    # origins via the CSRF_TRUSTED_ORIGINS env var (comma-separated).
+    csrf_origins = env('CSRF_TRUSTED_ORIGINS')
+    if csrf_origins:
+        CSRF_TRUSTED_ORIGINS = csrf_origins
 
 
 INSTALLED_APPS = [
