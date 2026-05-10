@@ -13,6 +13,8 @@ dependencies = [
     'sqlparse==0.5.5',
     'Pillow==11.0.0',
     'whitenoise==6.12.0',
+    'requests==2.32.3',
+    'vercel_blob==0.4.2',
 ]
 
 [tool.setuptools]

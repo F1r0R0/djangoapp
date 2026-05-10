@@ -77,6 +77,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Push /tmp/db.sqlite3 to Vercel Blob after every successful write so
+    # admin edits / habit completions survive function cold starts. No-op when
+    # BLOB_READ_WRITE_TOKEN is absent (Docker / local dev).
+    'core.middleware.BlobDBSyncMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -150,9 +154,18 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+# When deployed on Vercel (with a Blob read/write token) user-uploaded media
+# goes to Vercel Blob so files survive function cold starts. Local/Docker dev
+# keeps the existing FileSystemStorage behaviour.
+_DEFAULT_STORAGE_BACKEND = (
+    'core.blob_storage.BlobMediaStorage'
+    if os.environ.get('BLOB_READ_WRITE_TOKEN')
+    else 'django.core.files.storage.FileSystemStorage'
+)
+
 STORAGES = {
     'default': {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        'BACKEND': _DEFAULT_STORAGE_BACKEND,
     },
     # Compressed (gzip/brotli) but non-manifested storage so the same
     # collectstatic output works whether build-time DEBUG/IS_VERCEL flags differ
