@@ -35,36 +35,38 @@
       </p>
     </div>
   </div>
-  {% if today_log %}
+  {% if today_log and today_log.status == 'done' %}
     <form method="post" action="{% url 'habit_log_undo' habit.id %}">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}">
-      {% if today_log.status == 'done' %}
-        <button title="Снять отметку"
-                class="group px-5 py-3 bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700 rounded-xl font-semibold flex items-center gap-2 transition-colors">
-          <i class="fas fa-check-circle group-hover:hidden"></i>
-          <i class="fas fa-rotate-left hidden group-hover:inline"></i>
-          <span class="group-hover:hidden">Выполнено сегодня</span>
-          <span class="hidden group-hover:inline">Снять отметку</span>
-        </button>
-      {% elif today_log.status == 'partial' %}
-        <button title="Снять отметку"
-                class="group px-5 py-3 bg-amber-100 text-amber-700 hover:bg-red-100 hover:text-red-700 rounded-xl font-semibold flex items-center gap-2 transition-colors">
-          <i class="fas fa-circle-half-stroke group-hover:hidden"></i>
-          <i class="fas fa-rotate-left hidden group-hover:inline"></i>
-          <span class="group-hover:hidden">Частично сегодня</span>
-          <span class="hidden group-hover:inline">Снять отметку</span>
-        </button>
-      {% else %}
-        <button title="Снять отметку"
-                class="group px-5 py-3 bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700 rounded-xl font-semibold flex items-center gap-2 transition-colors">
-          <i class="fas fa-circle-minus group-hover:hidden"></i>
-          <i class="fas fa-rotate-left hidden group-hover:inline"></i>
-          <span class="group-hover:hidden">Пропущено сегодня</span>
-          <span class="hidden group-hover:inline">Снять отметку</span>
-        </button>
-      {% endif %}
+      <button title="Снять отметку"
+              class="group px-5 py-3 bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700 rounded-xl font-semibold flex items-center gap-2 transition-colors">
+        <i class="fas fa-check-circle group-hover:hidden"></i>
+        <i class="fas fa-rotate-left hidden group-hover:inline"></i>
+        <span class="group-hover:hidden">Выполнено сегодня</span>
+        <span class="hidden group-hover:inline">Снять отметку</span>
+      </button>
     </form>
+  {% elif today_log and today_log.status == 'skipped' %}
+    <div class="flex items-center gap-1">
+      <form method="post" action="{% url 'habit_log_today' habit.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="done">
+        <input type="hidden" name="duration_minutes" value="{{ habit.target_value }}">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button class="px-5 py-3 bg-green-500 text-white rounded-l-xl font-semibold hover:bg-green-600 flex items-center gap-2">
+          <i class="fas fa-check-circle"></i> Выполнить
+        </button>
+      </form>
+      <form method="post" action="{% url 'habit_log_undo' habit.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button title="Снять отметку «пропущено»"
+                class="px-4 py-3 bg-gray-100 text-gray-700 border-y border-r border-gray-200 rounded-r-xl font-semibold hover:bg-gray-50">
+          <i class="fas fa-rotate-left"></i>
+        </button>
+      </form>
+    </div>
   {% else %}
     <div class="flex items-center gap-1">
       <form method="post" action="{% url 'habit_log_today' habit.id %}">
@@ -73,17 +75,7 @@
         <input type="hidden" name="duration_minutes" value="{{ habit.target_value }}">
         <input type="hidden" name="next" value="{{ request.path }}">
         <button class="px-5 py-3 bg-green-500 text-white rounded-l-xl font-semibold hover:bg-green-600 flex items-center gap-2">
-          <i class="fas fa-check-circle"></i> Выполнено
-        </button>
-      </form>
-      <form method="post" action="{% url 'habit_log_today' habit.id %}">
-        {% csrf_token %}
-        <input type="hidden" name="status" value="partial">
-        <input type="hidden" name="duration_minutes" value="{{ habit.target_value }}">
-        <input type="hidden" name="next" value="{{ request.path }}">
-        <button title="Частично"
-                class="px-4 py-3 bg-white text-amber-600 border-y border-gray-200 font-semibold hover:bg-amber-50">
-          <i class="fas fa-circle-half-stroke"></i>
+          <i class="fas fa-check-circle"></i> Выполнить
         </button>
       </form>
       <form method="post" action="{% url 'habit_log_today' habit.id %}">

@@ -261,11 +261,14 @@ def calendar_view(request):
         slot_time = None
         if schedule:
             slot_time = schedule.window_start or schedule.reminder_time
+        # Only fully-done logs count as opaque pills. Partial / skipped /
+        # unlogged habits render as faded "planned" pills.
+        is_done = bool(log and log.status == 'done')
         return {
             'habit': habit,
             'time': slot_time,
-            'is_done': bool(log and log.status in {'done', 'partial'}),
-            'is_planned': not bool(log and log.status in {'done', 'partial'}),
+            'is_done': is_done,
+            'is_planned': not is_done,
             'log': log,
         }
 
@@ -437,9 +440,7 @@ def habit_log_today(request, habit_id: int):
 def habit_log_undo(request, habit_id: int):
     habit = get_object_or_404(Habit, id=habit_id, user=request.user)
     today = timezone.localdate()
-    deleted, _ = HabitLog.objects.filter(
-        habit=habit, user=request.user, log_date=today
-    ).delete()
+    deleted, _ = HabitLog.objects.filter(habit=habit, user=request.user, log_date=today).delete()
     if deleted:
         messages.success(request, f'Отметка "готово" для "{habit.title}" снята.')
     else:
