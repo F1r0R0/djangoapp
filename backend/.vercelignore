@@ -1,10 +1,12 @@
 # Local development artefacts that must not ship to the Vercel function bundle.
+# NOTE: ``staticfiles/`` is intentionally NOT ignored — build.py runs
+# ``manage.py collectstatic`` during deploy and the resulting directory must be
+# bundled into the function image so WhiteNoise can serve /static/ at runtime.
 .environment
 .environment-example
 .pre-commit-config.yaml
 README.md
 data/
-staticfiles/
 media/
 __pycache__/
 *.pyc

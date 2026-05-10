@@ -67,6 +67,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Serve collected /static/ files via WSGI. In DEBUG mode WhiteNoise no-ops
+    # (Django's runserver serves them); in production (Docker behind nginx,
+    # Vercel function) it serves STATIC_ROOT directly so /static/admin/* works.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -146,6 +150,17 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    # Compressed (gzip/brotli) but non-manifested storage so the same
+    # collectstatic output works whether build-time DEBUG/IS_VERCEL flags differ
+    # from runtime ones.
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

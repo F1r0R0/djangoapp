@@ -45,6 +45,9 @@ def main() -> None:
     from django.contrib.auth import get_user_model
     from django.core.management import call_command
 
+    print('==> collectstatic')
+    call_command('collectstatic', '--noinput', '--clear')
+
     print('==> migrate')
     call_command('migrate', '--noinput')
 
