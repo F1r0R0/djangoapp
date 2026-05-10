@@ -1,22 +1,28 @@
 """
 Django settings for HabitHamster.
 
-Supports two run modes:
+Supports three run modes:
 
 1. Local quick-start (default): SQLite, no .environment file required.
 2. Docker / production-like: reads .environment file with DB_* variables and
    uses PostgreSQL.
+3. Vercel (serverless): SQLite copied to /tmp at runtime; auto-detected via
+   the ``VERCEL`` environment variable that Vercel injects.
 
 The flag `USE_SQLITE` (env or default `True` when no DB_NAME env var) selects
 the engine.
 """
 
+import os
 from pathlib import Path
 
 import environ
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Vercel injects VERCEL=1 in build & runtime sandboxes.
+IS_VERCEL = bool(os.environ.get('VERCEL'))
 
 env = environ.Env(
     DEBUG=(bool, True),
@@ -37,8 +43,14 @@ if env_file.exists():
 
 
 SECRET_KEY = env('SECRET_KEY')
-DEBUG = env('DEBUG')
+DEBUG = False if IS_VERCEL else env('DEBUG')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+if IS_VERCEL:
+    # Vercel deployments are served from <project>.vercel.app and any custom
+    # domains. Allow them all; the platform terminates TLS in front of us.
+    ALLOWED_HOSTS = ['.vercel.app', '.now.sh', 'localhost', '127.0.0.1']
+    CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 INSTALLED_APPS = [
@@ -85,7 +97,16 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 
 # Database — SQLite by default for easy local dev, Postgres when DB_NAME is set.
-if env('USE_SQLITE') or not env('DB_NAME'):
+# On Vercel the bundled db.sqlite3 (built at deploy time by build.py) is copied
+# to /tmp at startup so Django can write sessions/admin data to it.
+if IS_VERCEL:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.environ.get('SQLITE_PATH', '/tmp/db.sqlite3'),
+        }
+    }
+elif env('USE_SQLITE') or not env('DB_NAME'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',

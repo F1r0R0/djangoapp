@@ -1,0 +1,10 @@
+# Local development artefacts that must not ship to the Vercel function bundle.
+.environment
+.environment-example
+.pre-commit-config.yaml
+README.md
+data/
+staticfiles/
+media/
+__pycache__/
+*.pyc

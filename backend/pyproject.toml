@@ -5,6 +5,16 @@ version = '0.1.0'
 [tool.setuptools]
 py-modules = []
 
+# Vercel deployment configuration.
+# Vercel auto-detects Django via manage.py and reads WSGI_APPLICATION from
+# settings.py. The build script seeds a SQLite DB so the deployed app has data
+# (and an admin/admin superuser) on first request.
+[tool.vercel]
+entrypoint = 'core.wsgi:application'
+
+[tool.vercel.scripts]
+build = 'python build.py'
+
 [tool.isort]
 profile = 'black'
 line_length = 120
