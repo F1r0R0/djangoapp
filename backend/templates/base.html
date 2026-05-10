@@ -171,7 +171,7 @@
     <a href="{% url 'dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
       <i class="fas fa-th-large w-5"></i> Дашборд
     </a>
-    <a href="{% url 'dashboard' %}#calendar" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600">
+    <a href="{% url 'calendar' %}" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.url_name == 'calendar' %}active{% else %}text-gray-600{% endif %}">
       <i class="fas fa-calendar w-5"></i> Календарь
     </a>
     <a href="{% url 'analytics' %}" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
