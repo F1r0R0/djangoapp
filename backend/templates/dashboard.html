@@ -66,11 +66,19 @@
             <i class="fas fa-{{ item.habit.icon }} text-{{ item.habit.color }}-600 text-xl"></i>
           </div>
           <div class="min-w-0 flex-1">
-            <div class="font-semibold truncate">{{ item.habit.title }}</div>
+            <div class="font-semibold truncate flex items-center gap-2">
+              {{ item.habit.title }}
+              {% if item.habit.schedule.has_window and item.is_active_now and not item.is_done %}
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500 text-white font-semibold uppercase tracking-wide">сейчас</span>
+              {% endif %}
+            </div>
             <div class="text-xs text-gray-500 mt-0.5 truncate">
               {% if item.habit.target_type == 'minutes' %}{{ item.habit.target_value }} мин •{% endif %}
               {{ item.habit.get_target_unit_display }}
               {% if item.habit.schedule %} • {{ item.habit.schedule.get_frequency_type_display }}{% endif %}
+              {% if item.habit.schedule.has_window %}
+                • {{ item.habit.schedule.window_start|time:"H:i" }}–{{ item.habit.schedule.window_end|time:"H:i" }}
+              {% endif %}
             </div>
             {% if item.habit.tags.all %}
               <div class="flex gap-1 mt-1.5 flex-wrap">
