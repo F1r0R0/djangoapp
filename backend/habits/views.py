@@ -256,9 +256,12 @@ def calendar_view(request):
         if schedule and not schedule.is_due_on(day):
             return None
         log = log_lookup.get((habit.id, day))
+        slot_time = None
+        if schedule:
+            slot_time = schedule.window_start or schedule.reminder_time
         return {
             'habit': habit,
-            'time': schedule.reminder_time if schedule else None,
+            'time': slot_time,
             'is_done': bool(log and log.status in {'done', 'partial'}),
             'is_planned': not bool(log and log.status in {'done', 'partial'}),
             'log': log,
@@ -405,6 +408,21 @@ def habit_log_today(request, habit_id: int):
         },
     )
     messages.success(request, f'Отметка для "{habit.title}" сохранена ({status}).')
+    return redirect(request.POST.get('next') or 'dashboard')
+
+
+@login_required
+@require_POST
+def habit_log_undo(request, habit_id: int):
+    habit = get_object_or_404(Habit, id=habit_id, user=request.user)
+    today = timezone.localdate()
+    deleted, _ = HabitLog.objects.filter(
+        habit=habit, user=request.user, log_date=today
+    ).delete()
+    if deleted:
+        messages.success(request, f'Отметка "готово" для "{habit.title}" снята.')
+    else:
+        messages.info(request, f'У "{habit.title}" сегодня и так не было отметки.')
     return redirect(request.POST.get('next') or 'dashboard')
 
 
