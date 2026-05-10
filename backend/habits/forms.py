@@ -8,43 +8,37 @@ from habits.models import Habit, HabitSchedule, Tag
 
 User = get_user_model()
 
+# Shared Tailwind class string for text inputs across auth forms.
+_INPUT_CSS = (
+    'w-full px-4 py-3 rounded-xl border border-gray-200'
+    ' focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none'
+)
+
 
 class RegisterForm(UserCreationForm):
-    email = forms.EmailField(required=False, widget=forms.EmailInput(attrs={
-        'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none',
-        'placeholder': 'email@example.com',
-    }))
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': _INPUT_CSS, 'placeholder': 'email@example.com'}),
+    )
 
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
         widgets = {
-            'username': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none',
-                'placeholder': 'твой_никнейм',
-            }),
+            'username': forms.TextInput(attrs={'class': _INPUT_CSS, 'placeholder': 'твой_никнейм'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name in ('password1', 'password2'):
-            self.fields[name].widget.attrs.update({
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none',
-                'placeholder': '••••••••',
-            })
+            self.fields[name].widget.attrs.update({'class': _INPUT_CSS, 'placeholder': '••••••••'})
 
 
 class LoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs.update({
-            'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none',
-            'placeholder': 'логин',
-        })
-        self.fields['password'].widget.attrs.update({
-            'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none',
-            'placeholder': '••••••••',
-        })
+        self.fields['username'].widget.attrs.update({'class': _INPUT_CSS, 'placeholder': 'логин'})
+        self.fields['password'].widget.attrs.update({'class': _INPUT_CSS, 'placeholder': '••••••••'})
 
 
 FREQUENCY_CHOICES = HabitSchedule.FREQUENCY_CHOICES
@@ -55,7 +49,20 @@ class HabitForm(forms.ModelForm):
     frequency_type = forms.ChoiceField(choices=FREQUENCY_CHOICES, initial='daily')
     days_of_week = forms.CharField(required=False, initial='1,2,3,4,5,6,7')
     reminder_time = forms.TimeField(required=False)
+    # Optional time-of-day window (e.g. 13:00..14:00). Both blank => all-day.
+    window_start = forms.TimeField(required=False, widget=forms.TimeInput(attrs={'type': 'time'}))
+    window_end = forms.TimeField(required=False, widget=forms.TimeInput(attrs={'type': 'time'}))
     tag_names = forms.CharField(required=False, help_text='Через запятую: бег, йога, чтение')
+
+    def clean(self):
+        cleaned = super().clean()
+        # Time window must be specified as a pair, or omitted entirely.
+        ws, we = cleaned.get('window_start'), cleaned.get('window_end')
+        if (ws and not we) or (we and not ws):
+            raise forms.ValidationError(
+                'Укажи и время начала, и время конца окна — либо оставь оба поля пустыми.'
+            )  # noqa: E501
+        return cleaned
 
     class Meta:
         model = Habit
@@ -79,6 +86,8 @@ class HabitForm(forms.ModelForm):
         sched.frequency_type = self.cleaned_data['frequency_type']
         sched.days_of_week = self.cleaned_data['days_of_week'] or '1,2,3,4,5,6,7'
         sched.reminder_time = self.cleaned_data.get('reminder_time') or None
+        sched.window_start = self.cleaned_data.get('window_start') or None
+        sched.window_end = self.cleaned_data.get('window_end') or None
         sched.save()
         # Tags by name (find or create).
         names_raw = self.cleaned_data.get('tag_names', '') or ''

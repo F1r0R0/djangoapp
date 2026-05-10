@@ -70,6 +70,7 @@ def landing(request):
 @login_required
 def dashboard(request):
     today: date = timezone.localdate()
+    now = timezone.localtime()
     habits = list(
         Habit.objects.filter(user=request.user, is_active=True).select_related('schedule').prefetch_related('tags')
     )
@@ -80,6 +81,7 @@ def dashboard(request):
     for habit in habits:
         schedule = getattr(habit, 'schedule', None)
         is_due = True if schedule is None else schedule.is_due_on(today)
+        is_active_now = True if schedule is None else schedule.is_active_at(now)
         log = logs_today.get(habit.id)
         is_done = bool(log and log.status in {'done', 'partial'})
         if is_due:
@@ -90,6 +92,7 @@ def dashboard(request):
             {
                 'habit': habit,
                 'is_due': is_due,
+                'is_active_now': is_active_now,
                 'is_done': is_done,
                 'log': log,
             }
@@ -163,8 +166,18 @@ def dashboard(request):
 _CALENDAR_HOUR_RANGE = list(range(6, 24))  # 06:00 — 23:00
 _WEEKDAY_LABELS = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС']
 _RUSSIAN_MONTHS = [
-    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
+    'Январь',
+    'Февраль',
+    'Март',
+    'Апрель',
+    'Май',
+    'Июнь',
+    'Июль',
+    'Август',
+    'Сентябрь',
+    'Октябрь',
+    'Ноябрь',
+    'Декабрь',
 ]
 
 
@@ -209,9 +222,7 @@ def calendar_view(request):
         view_mode = 'week'
 
     habits = list(
-        Habit.objects.filter(user=request.user, is_active=True)
-        .select_related('schedule')
-        .prefetch_related('tags')
+        Habit.objects.filter(user=request.user, is_active=True).select_related('schedule').prefetch_related('tags')
     )
 
     # Period bounds + previous / next anchors for the toolbar.
@@ -224,9 +235,9 @@ def calendar_view(request):
         first_of_month = anchor.replace(day=1)
         # Step a month back / forward by sticking close to the 1st-of-month.
         prev_anchor = (first_of_month - timedelta(days=1)).replace(day=1)
-        last_of_month = (first_of_month.replace(day=28) + timedelta(days=4))
+        last_of_month = first_of_month.replace(day=28) + timedelta(days=4)
         last_of_month = last_of_month - timedelta(days=last_of_month.day)
-        next_anchor = (last_of_month + timedelta(days=1))
+        next_anchor = last_of_month + timedelta(days=1)
     else:  # week
         period_start, period_end = _week_bounds(anchor)
         prev_anchor = period_start - timedelta(days=7)
@@ -238,9 +249,7 @@ def calendar_view(request):
         log_date__gte=period_start,
         log_date__lte=period_end,
     )
-    log_lookup: dict[tuple[int, date], HabitLog] = {
-        (log.habit_id, log.log_date): log for log in period_logs
-    }
+    log_lookup: dict[tuple[int, date], HabitLog] = {(log.habit_id, log.log_date): log for log in period_logs}
 
     def _pill_for(habit: Habit, day: date) -> dict | None:
         schedule = getattr(habit, 'schedule', None)
@@ -336,8 +345,7 @@ def calendar_view(request):
     else:
         if period_start.month == period_end.month:
             period_title = (
-                f'{period_start.day}–{period_end.day} '
-                f'{_RUSSIAN_MONTHS[period_start.month - 1]} {period_start.year}'
+                f'{period_start.day}–{period_end.day} ' f'{_RUSSIAN_MONTHS[period_start.month - 1]} {period_start.year}'
             )
         else:
             period_title = (

@@ -43,6 +43,8 @@ class HabitScheduleSerializer(serializers.ModelSerializer):
             'days_of_week',
             'times_per_period',
             'reminder_time',
+            'window_start',
+            'window_end',
             'start_date',
             'end_date',
         ]
@@ -104,7 +106,14 @@ class HabitLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = HabitLog
         fields = [
-            'id', 'habit', 'log_date', 'status', 'value', 'duration_minutes', 'note', 'mood_score',
+            'id',
+            'habit',
+            'log_date',
+            'status',
+            'value',
+            'duration_minutes',
+            'note',
+            'mood_score',
         ]
 
     def create(self, validated_data):
@@ -126,8 +135,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = [
-            'username', 'email', 'level', 'xp', 'xp_for_next_level', 'level_progress_pct',
-            'current_streak', 'best_streak', 'mascot_name', 'mascot_mood',
+            'username',
+            'email',
+            'level',
+            'xp',
+            'xp_for_next_level',
+            'level_progress_pct',
+            'current_streak',
+            'best_streak',
+            'mascot_name',
+            'mascot_mood',
         ]
 
 

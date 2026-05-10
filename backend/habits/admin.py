@@ -63,6 +63,7 @@ class HabitScheduleInline(admin.StackedInline):
         'days_of_week',
         'times_per_period',
         'reminder_time',
+        ('window_start', 'window_end'),
         ('start_date', 'end_date'),
     )
 
@@ -235,6 +236,8 @@ class HabitScheduleAdmin(BrandedAdminMixin, admin.ModelAdmin):
         'days_of_week',
         'times_per_period',
         'reminder_time',
+        'window_start',
+        'window_end',
         'start_date',
         'end_date',
     )

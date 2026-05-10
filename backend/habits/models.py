@@ -223,6 +223,11 @@ class HabitSchedule(models.Model):
     days_of_week = models.CharField(max_length=32, blank=True, default='1,2,3,4,5,6,7')
     times_per_period = models.PositiveIntegerField(default=1)
     reminder_time = models.TimeField(null=True, blank=True)
+    # Optional time-of-day window: when both are set, the habit is considered
+    # "active now" only between window_start and window_end on a due day.
+    # Both blank => habit is active for the whole day (legacy behaviour).
+    window_start = models.TimeField(null=True, blank=True)
+    window_end = models.TimeField(null=True, blank=True)
     start_date = models.DateField(default=timezone.localdate)
     end_date = models.DateField(null=True, blank=True)
 
@@ -249,6 +254,31 @@ class HabitSchedule(models.Model):
             return date.isoweekday() in self.days_list
         # monthly / custom: treat as "any day" by default for MVP.
         return True
+
+    @property
+    def has_window(self) -> bool:
+        return bool(self.window_start and self.window_end)
+
+    def is_active_at(self, when=None) -> bool:
+        """Return True if a habit is currently inside its time-of-day window.
+
+        - If no window is configured, falls back to ``is_due_on`` for the date.
+        - If ``window_start <= window_end``, the window is a normal intra-day
+          range (e.g. 13:00..14:00).
+        - If ``window_start > window_end``, the window wraps past midnight
+          (e.g. 22:00..06:00) and matches either side of midnight.
+        """
+        when = when or timezone.localtime()
+        if not self.is_due_on(when.date()):
+            return False
+        if not self.has_window:
+            return True
+        now_t = when.time()
+        start, end = self.window_start, self.window_end
+        if start <= end:
+            return start <= now_t <= end
+        # Wrap past midnight.
+        return now_t >= start or now_t <= end
 
 
 class HabitLog(models.Model):
