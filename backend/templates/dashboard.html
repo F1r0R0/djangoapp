@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Дашборд — HabitHamster{% endblock %}
+
+{% block content %}
+<header class="flex flex-wrap items-center justify-between gap-4 mb-6">
+  <div>
+    <h1 class="text-3xl font-bold font-display">Расписание</h1>
+    <p class="text-sm text-gray-500 mt-1">Сегодня, {{ today|date:"j E Y" }}</p>
+  </div>
+  <div class="flex items-center gap-3 flex-wrap">
+    <div class="hidden md:block text-right">
+      <div class="text-xs text-gray-500 uppercase">Уровень {{ profile.level }}</div>
+      <div class="text-sm font-semibold">{{ profile.xp }} / {{ profile.xp_for_next_level }} XP</div>
+    </div>
+    <div class="hidden md:block w-40 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div class="h-full bg-green-500" style="width: {{ profile.level_progress_pct }}%"></div>
+    </div>
+    <button class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200" title="Уведомления"><i class="fas fa-bell text-gray-600"></i></button>
+    <button onclick="document.querySelector('[data-modal=add]').classList.add('open')" class="px-4 py-2 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 flex items-center gap-2">
+      <i class="fas fa-plus"></i> Новая привычка
+    </button>
+  </div>
+</header>
+
+<!-- Welcome / week stream banner -->
+<div class="grid lg:grid-cols-3 gap-4 mb-6">
+  <div class="lg:col-span-2 glass-card relative overflow-hidden p-6 bg-gradient-to-r from-green-100 via-green-50 to-orange-50">
+    <div class="flex items-start gap-4">
+      <div>
+        <h2 class="text-2xl font-bold mb-1">Твой недельный поток</h2>
+        <p class="text-gray-600">Визуализируй свой успех шаг за шагом! 🐹</p>
+        <div class="mt-4 flex flex-wrap gap-3 text-sm">
+          <span class="px-3 py-1.5 rounded-full bg-white/80 border border-green-200 text-green-700 font-semibold">
+            <i class="fas fa-fire-flame-curved text-orange-500 mr-1"></i>Серия {{ profile.current_streak }} дн.
+          </span>
+          <span class="px-3 py-1.5 rounded-full bg-white/80 border border-orange-200 text-orange-700 font-semibold">
+            <i class="fas fa-trophy mr-1"></i>Лучшая {{ profile.best_streak }} дн.
+          </span>
+          <span class="px-3 py-1.5 rounded-full bg-white/80 border border-blue-200 text-blue-700 font-semibold">
+            <i class="fas fa-bullseye mr-1"></i>Сегодня {{ done_today }} / {{ due_today }}
+          </span>
+        </div>
+      </div>
+      <img src="{% static 'img/mascot.png' %}" class="w-28 h-28 ml-auto hidden sm:block" alt="">
+    </div>
+  </div>
+  <div class="glass-card p-6 flex flex-col justify-center items-center text-center">
+    <div class="text-xs text-gray-500 uppercase">Прогресс недельной цели</div>
+    <div class="text-5xl font-bold mt-2 text-gray-800">{{ weekly_completion_rate }}%</div>
+    <div class="mt-3 w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+      <div class="h-full bg-green-500" style="width: {{ weekly_completion_rate }}%"></div>
+    </div>
+    <div class="text-xs text-gray-500 mt-2">{{ wt_done }} из {{ wt_total_real }} отметок</div>
+  </div>
+</div>
+
+<!-- Habits list + mini calendar -->
+<div class="grid lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 space-y-4">
+    <h2 class="text-lg font-bold">Привычки на сегодня</h2>
+    {% for item in habits %}
+      <div class="glass-card p-4 flex items-center gap-4">
+        <a href="{% url 'habit_detail' item.habit.id %}" class="flex items-center gap-4 flex-1 min-w-0">
+          <div class="w-12 h-12 rounded-full bg-{{ item.habit.color }}-100 flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-{{ item.habit.icon }} text-{{ item.habit.color }}-600 text-xl"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="font-semibold truncate">{{ item.habit.title }}</div>
+            <div class="text-xs text-gray-500 mt-0.5 truncate">
+              {% if item.habit.target_type == 'minutes' %}{{ item.habit.target_value }} мин •{% endif %}
+              {{ item.habit.get_target_unit_display }}
+              {% if item.habit.schedule %} • {{ item.habit.schedule.get_frequency_type_display }}{% endif %}
+            </div>
+            {% if item.habit.tags.all %}
+              <div class="flex gap-1 mt-1.5 flex-wrap">
+                {% for tag in item.habit.tags.all|slice:":3" %}
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ tag.name }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </a>
+        {% if item.is_done %}
+          <button disabled class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold flex items-center gap-1.5">
+            <i class="fas fa-check-circle"></i> Готово
+          </button>
+        {% else %}
+          <form method="post" action="{% url 'habit_log_today' item.habit.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="done">
+            <input type="hidden" name="duration_minutes" value="{{ item.habit.target_value }}">
+            <button class="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-semibold hover:bg-green-600 flex items-center gap-1.5">
+              <i class="fas fa-check"></i> Выполнить
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    {% empty %}
+      <div class="glass-card p-8 text-center">
+        <img src="{% static 'img/mascot_alt.png' %}" class="w-24 h-24 mx-auto opacity-90" alt="">
+        <h3 class="font-bold text-lg mt-4">Ещё нет привычек</h3>
+        <p class="text-sm text-gray-500 mt-1">Начни с одной маленькой — например, выпить стакан воды утром.</p>
+        <button onclick="document.querySelector('[data-modal=add]').classList.add('open')" class="mt-4 px-5 py-2.5 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600">
+          <i class="fas fa-plus mr-1"></i> Создать привычку
+        </button>
+      </div>
+    {% endfor %}
+
+    {% if insights %}
+      <div class="mt-8">
+        <h2 class="text-lg font-bold mb-3">Инсайты</h2>
+        <div class="grid sm:grid-cols-2 gap-3">
+          {% for insight in insights %}
+            <div class="glass-card p-4">
+              <div class="text-xs text-gray-500 uppercase">{{ insight.get_insight_type_display }}</div>
+              <div class="font-semibold mt-1">{{ insight.title }}</div>
+              <div class="text-sm text-gray-600 mt-1">{{ insight.message }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Mini calendar -->
+  <aside>
+    <div class="glass-card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-bold font-display">{{ calendar_month|date:"F Y"|capfirst }}</h3>
+        <div class="flex items-center gap-1 text-gray-400">
+          <button class="w-7 h-7 rounded-lg hover:bg-gray-100"><i class="fas fa-chevron-left text-xs"></i></button>
+          <button class="w-7 h-7 rounded-lg hover:bg-gray-100"><i class="fas fa-chevron-right text-xs"></i></button>
+        </div>
+      </div>
+      <div class="grid grid-cols-7 gap-1 text-xs text-center">
+        <div class="text-gray-400">Пн</div><div class="text-gray-400">Вт</div><div class="text-gray-400">Ср</div>
+        <div class="text-gray-400">Чт</div><div class="text-gray-400">Пт</div><div class="text-gray-400">Сб</div>
+        <div class="text-gray-400">Вс</div>
+        {% for cell in calendar_cells %}
+          <div class="aspect-square flex items-center justify-center rounded-lg text-xs
+              {% if cell.is_today %}bg-green-500 text-white font-bold
+              {% elif cell.has_activity and cell.in_month %}bg-green-100 text-green-700 font-semibold
+              {% elif cell.in_month %}text-gray-700
+              {% else %}text-gray-300{% endif %}">
+            {{ cell.date.day }}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="glass-card p-4 mt-4">
+      <h3 class="font-bold mb-2">Маскот говорит</h3>
+      <div class="flex items-start gap-3">
+        <img src="{% static 'img/mascot.png' %}" class="w-12 h-12 rounded-xl">
+        <p class="text-sm text-gray-600 leading-relaxed">
+          {% if profile.mascot_mood == 'excited' %}
+            🔥 Серия {{ profile.current_streak }} дней! Ты на огне.
+          {% elif profile.mascot_mood == 'happy' %}
+            🙌 Хороший темп. Не сбавляй!
+          {% else %}
+            Я скучаю… давай сделаем хотя бы маленький шаг сегодня.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </aside>
+</div>
+
+{% include "includes/add_habit_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ESC closes any open modal.
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('[data-modal].open').forEach(m => m.classList.remove('open'));
+  });
+</script>
+{% endblock %}

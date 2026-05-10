@@ -123,9 +123,9 @@
 Маскот — важная часть пользовательского опыта.
 
 Он выступает как “живой интерфейс”:
-- даёт обратную связь  
-- мотивирует  
-- реагирует на действия пользователя  
+- даёт обратную связь
+- мотивирует
+- реагирует на действия пользователя
 
 <img src="image\1776187900.png" alt="Примеры маскотов" width="300">
 
@@ -153,7 +153,7 @@
 - генератор привычек
 - маскот как уникальная фича
 
-💡 
+💡
 - не перегружен “AI ради AI”
 - объяснимый и логичный
 - легко расширяется
@@ -177,22 +177,62 @@
 
 ## Технологический стек
 
-**Backend**  
+**Backend**
 - FastAPI — основной API
 - SQLAlchemy — работа с БД
 - Pydantic — валидация
 
-**Frontend (UI)**  
+**Frontend (UI)**
 - NiceGUI — основной UI-фреймворк ?
 
-**Database**  
+**Database**
 - PostgreSQL
 
-**Аналитика**  
+**Аналитика**
 - pandas
 - numpy
 
 
+
+## Запуск (локально)
+
+### Вариант 1 — без Docker (SQLite)
+
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed_demo --reset    # опционально: создаст демо-аккаунт
+python manage.py runserver 0.0.0.0:8000
+```
+
+Открой http://localhost:8000. Вход для демо-аккаунта: `demo` / `demopass123`.
+
+### Вариант 2 — Docker (PostgreSQL)
+
+```bash
+cp backend/.environment-example backend/.environment
+make build
+make up
+make migrate
+make seed-demo   # опционально
+```
+
+### Структура backend
+
+- `backend/core/` — Django-проект (settings, urls).
+- `backend/habits/` — основной app: модели, миграции, сервисы, REST API, HTML-вьюхи, шаблоны, формы, сидинг.
+- `backend/habits/services/` — бизнес-логика: streak, analytics, gamification, insights.
+- `backend/habits/api/` — DRF endpoints (`/api/auth/*`, `/api/habits/`, `/api/habit-logs/`, `/api/dashboard/`, `/api/analytics/summary/`, …).
+- `backend/templates/` — серверный UI (Tailwind CDN + FontAwesome), повторяет первый прототип.
+- `backend/static/img/` — логотип, фавикон, маскот.
+
+### Команды
+
+- `python manage.py seed_taxonomy` — пересеять активити-типы, теги, категории, веса, базовые достижения (идемпотентно).
+- `python manage.py seed_demo --reset` — пересоздать демо-пользователя `demo` с 6 привычками и ~60 днями истории.
+- `python manage.py createsuperuser` — для входа в `/admin/`.
 
 ## Команда
 

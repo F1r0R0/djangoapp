@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Войти — HabitHamster{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto mt-12">
+  <div class="text-center mb-8">
+    <img src="{% static 'img/hamster_logoNoText.svg' %}" class="w-16 h-16 mx-auto" alt="">
+    <h1 class="text-3xl font-bold mt-4 font-display">С возвращением</h1>
+    <p class="text-gray-500 mt-1">Маскот скучал.</p>
+  </div>
+  <div class="glass-card p-8">
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {% for field in form %}
+        <div>
+          <label class="text-sm font-semibold text-gray-700 block mb-1">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="text-xs text-red-500 mt-1">{{ field.errors|join:" " }}</div>{% endif %}
+        </div>
+      {% endfor %}
+      {% if form.non_field_errors %}
+        <div class="text-sm text-red-500">{{ form.non_field_errors|join:" " }}</div>
+      {% endif %}
+      <button type="submit" class="w-full px-4 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600">
+        Войти
+      </button>
+    </form>
+    <div class="text-center text-sm text-gray-500 mt-6">
+      Нет аккаунта? <a href="{% url 'register' %}" class="text-green-600 font-semibold">Зарегистрироваться</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

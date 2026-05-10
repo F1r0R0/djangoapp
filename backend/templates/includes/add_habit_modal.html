@@ -1,0 +1,97 @@
+{% load static %}
+<div data-modal="add" class="fixed inset-0 bg-black/50 z-50 items-center justify-center p-4 hidden">
+  <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+    <button class="absolute top-3 right-3 w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
+      onclick="document.querySelector('[data-modal=add]').classList.remove('open')">
+      <i class="fas fa-times"></i>
+    </button>
+
+    <div class="mb-4">
+      <h2 class="text-2xl font-bold font-display">Создать новую привычку</h2>
+      <p class="text-sm text-gray-500 mt-1">Каждое маленькое действие превращается в уютную норку.</p>
+    </div>
+
+    <form method="post" action="{% url 'habit_create' %}" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+
+      <div>
+        <label class="text-sm font-semibold block mb-1">Название привычки</label>
+        <input type="text" name="title" required maxlength="120"
+          placeholder="например: Утренняя медитация"
+          class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
+      </div>
+
+      <div>
+        <label class="text-sm font-semibold block mb-2">Выбери иконку</label>
+        <div class="flex flex-wrap gap-2" id="icon-picker">
+          {% for icon, label in add_form.fields.icon.choices %}
+            <label class="cursor-pointer">
+              <input type="radio" name="icon" value="{{ icon }}" {% if forloop.first %}checked{% endif %} class="sr-only peer">
+              <div class="w-12 h-12 rounded-full bg-gray-100 peer-checked:bg-green-500 peer-checked:text-white flex items-center justify-center transition" title="{{ label }}">
+                <i class="fas fa-{{ icon }}"></i>
+              </div>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm font-semibold block mb-1">Частота</label>
+          <select name="frequency_type" class="w-full px-4 py-3 rounded-xl border border-gray-200">
+            {% for v, label in add_form.fields.frequency_type.choices %}
+              <option value="{{ v }}" {% if forloop.first %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-semibold block mb-1">Длительность (мин)</label>
+          <input type="number" name="duration_minutes" value="15" min="0" max="600"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm font-semibold block mb-1">Тип цели</label>
+          <select name="target_type" class="w-full px-4 py-3 rounded-xl border border-gray-200">
+            <option value="check">Просто отметка</option>
+            <option value="minutes" selected>Минуты</option>
+            <option value="count">Количество</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-semibold block mb-1">Значение цели</label>
+          <input type="number" name="target_value" value="1" min="1" max="600"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200">
+        </div>
+      </div>
+
+      <div>
+        <label class="text-sm font-semibold block mb-2">Цвет</label>
+        <div class="flex gap-2 flex-wrap">
+          {% for v, label in add_form.fields.color.choices %}
+            <label class="cursor-pointer">
+              <input type="radio" name="color" value="{{ v }}" {% if forloop.first %}checked{% endif %} class="sr-only peer">
+              <span class="w-8 h-8 inline-block rounded-full ring-2 ring-transparent peer-checked:ring-gray-700 bg-{{ v }}-400"></span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div>
+        <label class="text-sm font-semibold block mb-1">Теги <span class="text-gray-400 font-normal">(через запятую)</span></label>
+        <input type="text" name="tag_names" placeholder="например: йога, утро, гибкость"
+          class="w-full px-4 py-3 rounded-xl border border-gray-200">
+      </div>
+
+      <input type="hidden" name="target_unit" value="minutes">
+      <input type="hidden" name="days_of_week" value="1,2,3,4,5,6,7">
+
+      <button type="submit" class="w-full py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 flex items-center justify-center gap-2 mt-2">
+        <i class="fas fa-sparkles"></i> Создать привычку
+      </button>
+    </form>
+  </div>
+</div>

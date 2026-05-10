@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}HabitHamster — трекер привычек{% endblock %}
+
+{% block content %}
+<div class="grid md:grid-cols-2 gap-12 items-center mt-10">
+  <div>
+    <div class="flex items-center gap-3 mb-6">
+      <img src="{% static 'img/hamster_logoNoText.svg' %}" class="w-14 h-14" alt="">
+      <span class="font-display font-bold text-green-600 text-3xl">HabitHamster</span>
+    </div>
+    <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4">
+      Не просто трекер. <span class="text-green-600">Норка осознанных привычек.</span>
+    </h1>
+    <p class="text-gray-600 text-lg mb-8">
+      Создавай привычки, отмечай выполнение и смотри, как маскот растёт вместе с твоей серией.
+      Аналитика, которая объясняет почему ты срываешься — и помогает не сорваться.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <a href="{% url 'register' %}" class="px-6 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 shadow-md flex items-center gap-2">
+        <i class="fas fa-rocket"></i> Начать бесплатно
+      </a>
+      <a href="{% url 'login' %}" class="px-6 py-3 bg-white border border-gray-200 rounded-xl font-semibold hover:bg-gray-50">
+        Войти
+      </a>
+    </div>
+    <div class="mt-10 grid grid-cols-3 gap-4 max-w-md">
+      <div class="text-center">
+        <div class="text-3xl font-bold text-green-600">42</div>
+        <div class="text-xs text-gray-500 uppercase">привычки</div>
+      </div>
+      <div class="text-center">
+        <div class="text-3xl font-bold text-orange-500">12</div>
+        <div class="text-xs text-gray-500 uppercase">дней серии</div>
+      </div>
+      <div class="text-center">
+        <div class="text-3xl font-bold text-blue-500">75%</div>
+        <div class="text-xs text-gray-500 uppercase">выполнения</div>
+      </div>
+    </div>
+  </div>
+  <div class="relative">
+    <div class="absolute -inset-4 bg-gradient-to-br from-green-200 to-orange-200 rounded-3xl blur-2xl opacity-60"></div>
+    <div class="relative glass-card p-8">
+      <img src="{% static 'img/mascot.png' %}" class="w-full max-w-sm mx-auto" alt="Маскот HabitHamster">
+      <div class="mt-6 grid grid-cols-2 gap-4">
+        <div class="rounded-xl bg-green-50 p-4">
+          <div class="text-xs text-green-700 uppercase">Утро</div>
+          <div class="font-semibold mt-1">Йога • 15 мин</div>
+          <div class="text-xs text-gray-500 mt-1">Серия 12 дней</div>
+        </div>
+        <div class="rounded-xl bg-orange-50 p-4">
+          <div class="text-xs text-orange-700 uppercase">Вечер</div>
+          <div class="font-semibold mt-1">Чтение • 10 стр</div>
+          <div class="text-xs text-gray-500 mt-1">75% за неделю</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="mt-24">
+  <h2 class="text-2xl font-bold mb-8 font-display">Что внутри</h2>
+  <div class="grid md:grid-cols-3 gap-6">
+    {% include "includes/feature_card.html" with icon="chart-line" color="green" title="Аналитика без воды" body="Лучшие/слабые дни недели, тепловая карта, разрез по тегам и категориям." %}
+    {% include "includes/feature_card.html" with icon="trophy" color="orange" title="Геймификация" body="XP, уровни, достижения. Маскот меняет настроение в зависимости от твоей серии." %}
+    {% include "includes/feature_card.html" with icon="lightbulb" color="blue" title="Инсайты" body="«Воскресенье — слабый день». Понятные формулировки, без AI-bullshit." %}
+  </div>
+</section>
+{% endblock %}

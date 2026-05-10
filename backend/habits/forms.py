@@ -1,0 +1,106 @@
+"""Forms for the HTML pages."""
+from django import forms
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+
+from habits.models import Habit, HabitSchedule, Tag
+
+
+User = get_user_model()
+
+
+class RegisterForm(UserCreationForm):
+    email = forms.EmailField(required=False, widget=forms.EmailInput(attrs={
+        'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none',
+        'placeholder': 'email@example.com',
+    }))
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none',
+                'placeholder': 'твой_никнейм',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in ('password1', 'password2'):
+            self.fields[name].widget.attrs.update({
+                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none',
+                'placeholder': '••••••••',
+            })
+
+
+class LoginForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({
+            'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none',
+            'placeholder': 'логин',
+        })
+        self.fields['password'].widget.attrs.update({
+            'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none',
+            'placeholder': '••••••••',
+        })
+
+
+FREQUENCY_CHOICES = HabitSchedule.FREQUENCY_CHOICES
+
+
+class HabitForm(forms.ModelForm):
+    duration_minutes = forms.IntegerField(min_value=0, max_value=600, required=False, initial=15)
+    frequency_type = forms.ChoiceField(choices=FREQUENCY_CHOICES, initial='daily')
+    days_of_week = forms.CharField(required=False, initial='1,2,3,4,5,6,7')
+    reminder_time = forms.TimeField(required=False)
+    tag_names = forms.CharField(required=False, help_text='Через запятую: бег, йога, чтение')
+
+    class Meta:
+        model = Habit
+        fields = ['title', 'description', 'icon', 'color', 'target_type', 'target_value', 'target_unit']
+        widgets = {
+            'title': forms.TextInput(attrs={'placeholder': 'например: Утренняя медитация'}),
+            'description': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Зачем тебе эта привычка?'}),
+        }
+
+    def save(self, user, commit=True):
+        instance = super().save(commit=False)
+        instance.user = user
+        # If the user picked target_type=minutes, copy duration into target_value.
+        duration = self.cleaned_data.get('duration_minutes')
+        if instance.target_type == 'minutes' and duration:
+            instance.target_value = duration
+            instance.target_unit = 'minutes'
+        instance.save()
+        # Schedule.
+        sched, _ = HabitSchedule.objects.get_or_create(habit=instance)
+        sched.frequency_type = self.cleaned_data['frequency_type']
+        sched.days_of_week = self.cleaned_data['days_of_week'] or '1,2,3,4,5,6,7'
+        sched.reminder_time = self.cleaned_data.get('reminder_time') or None
+        sched.save()
+        # Tags by name (find or create).
+        names_raw = self.cleaned_data.get('tag_names', '') or ''
+        names = [n.strip() for n in names_raw.split(',') if n.strip()]
+        if names:
+            instance.tags.clear()
+            for name in names:
+                tag, _ = Tag.objects.get_or_create(
+                    name=name,
+                    defaults={'slug': _slugify_unique(name)},
+                )
+                instance.tags.add(tag)
+        return instance
+
+
+def _slugify_unique(name: str) -> str:
+    from django.utils.text import slugify
+
+    base = slugify(name) or 'tag'
+    candidate = base
+    i = 1
+    while Tag.objects.filter(slug=candidate).exists():
+        i += 1
+        candidate = f'{base}-{i}'
+    return candidate

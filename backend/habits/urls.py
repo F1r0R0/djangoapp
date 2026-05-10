@@ -1,0 +1,17 @@
+from django.urls import path
+
+from habits import views
+
+
+urlpatterns = [
+    path('', views.landing, name='landing'),
+    path('accounts/login/', views.HHLoginView.as_view(), name='login'),
+    path('accounts/logout/', views.HHLogoutView.as_view(), name='logout'),
+    path('accounts/register/', views.register_view, name='register'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('habits/new/', views.habit_create, name='habit_create'),
+    path('habits/<int:habit_id>/', views.habit_detail, name='habit_detail'),
+    path('habits/<int:habit_id>/log/', views.habit_log_today, name='habit_log_today'),
+    path('habits/<int:habit_id>/delete/', views.habit_delete, name='habit_delete'),
+    path('analytics/', views.analytics, name='analytics'),
+]
