@@ -90,9 +90,16 @@
           </div>
         </a>
         {% if item.is_done %}
-          <button disabled class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-semibold flex items-center gap-1.5">
-            <i class="fas fa-check-circle"></i> Готово
-          </button>
+          <form method="post" action="{% url 'habit_log_undo' item.habit.id %}">
+            {% csrf_token %}
+            <button title="Снять отметку «готово»"
+                    class="group px-4 py-2 bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-check-circle group-hover:hidden"></i>
+              <i class="fas fa-rotate-left hidden group-hover:inline"></i>
+              <span class="group-hover:hidden">Готово</span>
+              <span class="hidden group-hover:inline">Снять</span>
+            </button>
+          </form>
         {% else %}
           <form method="post" action="{% url 'habit_log_today' item.habit.id %}">
             {% csrf_token %}

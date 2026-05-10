@@ -13,6 +13,7 @@ urlpatterns = [
     path('habits/new/', views.habit_create, name='habit_create'),
     path('habits/<int:habit_id>/', views.habit_detail, name='habit_detail'),
     path('habits/<int:habit_id>/log/', views.habit_log_today, name='habit_log_today'),
+    path('habits/<int:habit_id>/log/undo/', views.habit_log_undo, name='habit_log_undo'),
     path('habits/<int:habit_id>/delete/', views.habit_delete, name='habit_delete'),
     path('analytics/', views.analytics, name='analytics'),
 ]
