@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Аналитика — HabitHamster{% endblock %}
+
+{% block content %}
+<header class="flex flex-wrap items-center justify-between gap-4 mb-6">
+  <div>
+    <p class="text-xs text-gray-500 uppercase tracking-wider">Обзор эффективности</p>
+    <h1 class="text-3xl md:text-4xl font-bold font-display mt-1">Твой прогресс процветает.</h1>
+  </div>
+  <div class="flex items-center gap-1 bg-white border border-gray-200 rounded-full p-1 text-sm">
+    <a href="?period=week" class="px-4 py-1.5 rounded-full {% if period == 'week' %}bg-green-500 text-white font-semibold{% else %}text-gray-600{% endif %}">Неделя</a>
+    <a href="?period=month" class="px-4 py-1.5 rounded-full {% if period == 'month' %}bg-green-500 text-white font-semibold{% else %}text-gray-600{% endif %}">Месяц</a>
+    <a href="?period=year" class="px-4 py-1.5 rounded-full {% if period == 'year' %}bg-green-500 text-white font-semibold{% else %}text-gray-600{% endif %}">Год</a>
+  </div>
+</header>
+
+<div class="grid lg:grid-cols-3 gap-6 mb-6">
+  <!-- Highlight insight card -->
+  <div class="lg:col-span-2 glass-card p-6 bg-gradient-to-br from-green-700 via-green-600 to-green-500 text-white relative overflow-hidden">
+    <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center mb-4">
+      <i class="fas fa-lightbulb text-2xl"></i>
+    </div>
+    <h2 class="text-2xl font-bold leading-snug max-w-md">
+      {% if morning_pct > 0 %}
+        Вероятность выполнения утром у тебя на {{ morning_pct }}% выше! ☀️
+      {% else %}
+        Каждый шаг — это шаг к лучшей версии тебя.
+      {% endif %}
+    </h2>
+    <p class="text-white/90 mt-3 max-w-md">
+      {% if best_day %}
+        {{ best_day.name }} — твой пик ({{ best_day.rate }}%). Планируй сложные задачи в это «золотое окно».
+      {% else %}
+        Отметь хотя бы одну привычку — и я подскажу твои паттерны.
+      {% endif %}
+    </p>
+    <button class="mt-5 px-5 py-2.5 bg-white text-green-700 rounded-xl font-semibold hover:bg-green-50">
+      Оптимизировать день
+    </button>
+    <img src="{% static 'img/mascot.png' %}" class="w-32 h-32 absolute -bottom-4 -right-4 opacity-90 hidden md:block">
+  </div>
+
+  <!-- Donut: categories -->
+  <div class="glass-card p-6">
+    <h3 class="font-bold mb-4">Привычки по категориям</h3>
+    {% if chart_categories %}
+      <svg viewBox="0 0 36 36" class="w-40 h-40 mx-auto -rotate-90">
+        <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#E5E7EB" stroke-width="3.6"/>
+        {% for cat in chart_categories %}
+          <circle cx="18" cy="18" r="15.9" fill="transparent"
+            stroke="{{ cat.color }}" stroke-width="3.6"
+            stroke-dasharray="{{ cat.pct }} 100"
+            stroke-dashoffset="-{{ cat.offset }}"/>
+        {% endfor %}
+      </svg>
+      <div class="text-center -mt-24 mb-12 pointer-events-none">
+        <div class="text-2xl font-bold">{{ chart_categories|length }}</div>
+        <div class="text-xs text-gray-400">активно</div>
+      </div>
+      <ul class="space-y-2 mt-4">
+        {% for cat in chart_categories %}
+          <li class="flex items-center justify-between text-sm">
+            <span class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full" style="background: {{ cat.color }}"></span>
+              {{ cat.name }}
+            </span>
+            <span class="font-semibold">{{ cat.pct }}%</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-sm text-gray-500">Добавь привычки с тегами, чтобы увидеть разрез.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Activity bars -->
+<div class="glass-card p-6 mb-6">
+  <div class="flex items-baseline justify-between mb-4">
+    <div>
+      <h3 class="font-bold">Активность за период</h3>
+      <p class="text-xs text-gray-500">Ежедневные выполнения за {{ days }} дней</p>
+    </div>
+    <div class="text-right">
+      <div class="text-2xl font-bold">{{ avg_completion }}%</div>
+      <div class="text-xs text-gray-400 uppercase">средняя стабильность</div>
+    </div>
+  </div>
+  <div class="h-40 flex items-end gap-1">
+    {% for bar in chart_bars %}
+      <div class="flex-1 bg-green-200 rounded-t" style="height: {{ bar.height_pct }}%"
+           title="{{ bar.date|date:'j E' }} — {{ bar.count }}"></div>
+    {% endfor %}
+  </div>
+  <div class="flex justify-between text-xs text-gray-400 mt-2">
+    {% if chart_bars %}
+      <span>{{ chart_bars.0.date|date:"j M"|upper }}</span>
+      {% with last=chart_bars|last %}<span>{{ last.date|date:"j M"|upper }}</span>{% endwith %}
+    {% endif %}
+  </div>
+</div>
+
+<!-- Best days + Achievements -->
+<div class="grid lg:grid-cols-2 gap-6">
+  <div class="glass-card p-6">
+    <h3 class="font-bold mb-4">Лучшие дни</h3>
+    <div class="space-y-3">
+      {% for d in best_days %}
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span>{{ d.name }}</span>
+            <span class="font-semibold">{{ d.rate }}%</span>
+          </div>
+          <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full bg-green-500" style="width: {{ d.rate }}%"></div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% if best_day %}
+      <p class="text-xs text-gray-500 italic mt-4">{{ best_day.name }} — твой самый продуктивный день. Ты лидер в начале недели.</p>
+    {% endif %}
+  </div>
+
+  <div class="glass-card p-6">
+    <div class="flex items-baseline justify-between mb-4">
+      <h3 class="font-bold">Значки достижений</h3>
+      <span class="text-xs text-green-600 font-semibold">СМОТРЕТЬ ВСЕ</span>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {% for entry in achievements_data %}
+        <div class="text-center {% if not entry.unlocked %}opacity-40{% endif %}">
+          <div class="w-14 h-14 mx-auto rounded-full flex items-center justify-center
+              {% if entry.unlocked %}bg-{{ entry.achievement.condition_type|cut:'_' }}-100{% else %}bg-gray-100{% endif %}">
+            <i class="fas fa-{{ entry.achievement.icon|default:'medal' }} text-xl
+              {% if entry.unlocked %}text-green-600{% else %}text-gray-400{% endif %}"></i>
+          </div>
+          <div class="text-xs font-semibold mt-2">{{ entry.achievement.title }}</div>
+          <div class="text-[10px] text-gray-400">{{ entry.achievement.description|truncatechars:24 }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if insights %}
+  <div class="mt-6 glass-card p-6 text-center">
+    <img src="{% static 'img/mascot.png' %}" class="w-16 h-16 mx-auto mb-3">
+    <h3 class="font-bold text-lg">Ты справляешься потрясающе!</h3>
+    <p class="text-sm text-gray-500 mt-1 max-w-md mx-auto">
+      Каждый маленький шаг — это огромный скачок к лучшей версии себя. Хэмми болеет за тебя.
+    </p>
+    <div class="grid sm:grid-cols-2 gap-3 mt-6 text-left">
+      {% for insight in insights %}
+        <div class="bg-green-50 rounded-xl p-4">
+          <div class="text-xs text-green-700 font-semibold uppercase">{{ insight.get_insight_type_display }}</div>
+          <div class="font-semibold mt-1">{{ insight.title }}</div>
+          <div class="text-sm text-gray-600 mt-1">{{ insight.message }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
+{% include "includes/add_habit_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('[data-modal].open').forEach(m => m.classList.remove('open'));
+  });
+</script>
+{% endblock %}

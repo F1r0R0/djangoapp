@@ -1,0 +1,131 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}HabitHamster{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/hamster_favicon.svg' %}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rubik:wght@500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4CAF50',
+            secondary: '#81C784',
+            accent: '#FF9800',
+            background: '#FAF8F5',
+            surface: '#FFFFFF',
+            text: '#2E3333',
+            muted: '#6B7280',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Rubik', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #FAF8F5; color: #2E3333; }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    .nav-link { transition: all .2s ease; }
+    .nav-link:hover { background: rgba(76, 175, 80, .1); }
+    .nav-link.active { background: rgba(76, 175, 80, .15); color: #4CAF50; font-weight: 600; }
+    .heatmap-cell { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+    .heatmap-0 { background: #ECEFF1; }
+    .heatmap-1 { background: #C8E6C9; }
+    .heatmap-2 { background: #81C784; }
+    .heatmap-3 { background: #4CAF50; }
+    [data-modal] { display: none; }
+    [data-modal].open { display: flex; }
+  </style>
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="min-h-screen pb-24 md:pb-0">
+
+{% if user.is_authenticated %}
+<aside class="fixed top-0 left-0 bottom-0 w-64 bg-white border-r border-gray-200 hidden md:flex flex-col p-6 z-30">
+  <a href="{% url 'dashboard' %}" class="flex items-center gap-2 mb-8">
+    <img src="{% static 'img/hamster_logoNoText.svg' %}" class="w-10 h-10" alt="HabitHamster">
+    <div>
+      <div class="font-display font-bold text-green-600 text-lg leading-tight">HabitHamster</div>
+      <div class="text-xs text-gray-500">Уровень {{ profile.level }} • Мастер привычек</div>
+    </div>
+  </a>
+  <nav class="flex flex-col gap-1 text-sm">
+    <a href="{% url 'dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      <i class="fas fa-th-large w-5"></i> Дашборд
+    </a>
+    <a href="{% url 'analytics' %}" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
+      <i class="fas fa-chart-line w-5"></i> Аналитика
+    </a>
+    <a href="/admin/" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600">
+      <i class="fas fa-cog w-5"></i> Настройки
+    </a>
+  </nav>
+  <div class="mt-auto pt-6 border-t border-gray-100 flex items-center gap-3">
+    <img src="{% static 'img/mascot.png' %}" class="w-10 h-10 rounded-full" alt="Mascot">
+    <div class="flex-1 min-w-0">
+      <div class="text-sm font-semibold truncate">{{ user.username }}</div>
+      <div class="text-xs text-gray-500 truncate">{{ profile.xp }} / {{ profile.xp_for_next_level }} XP</div>
+    </div>
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+      <button class="text-gray-400 hover:text-red-500" title="Выйти"><i class="fas fa-sign-out-alt"></i></button>
+    </form>
+  </div>
+</aside>
+
+<div class="md:pl-64 min-h-screen">
+{% else %}
+<div class="min-h-screen">
+{% endif %}
+
+  {% if messages %}
+    <div class="fixed top-4 right-4 z-50 space-y-2">
+      {% for message in messages %}
+        <div class="px-4 py-3 rounded-xl shadow-lg text-sm {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <main class="max-w-6xl mx-auto px-4 md:px-8 py-6">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+{% if user.is_authenticated %}
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 md:hidden z-30">
+  <div class="max-w-7xl mx-auto px-4 flex justify-around">
+    <a href="{% url 'dashboard' %}" class="flex flex-col items-center gap-1 {% if request.resolver_match.url_name == 'dashboard' %}text-green-600{% else %}text-gray-500{% endif %}">
+      <i class="fas fa-th-large"></i>
+      <span class="text-xs">Дашборд</span>
+    </a>
+    <a href="{% url 'analytics' %}" class="flex flex-col items-center gap-1 {% if request.resolver_match.url_name == 'analytics' %}text-green-600{% else %}text-gray-500{% endif %}">
+      <i class="fas fa-chart-line"></i>
+      <span class="text-xs">Статистика</span>
+    </a>
+    <a href="#" onclick="document.querySelector('[data-modal=add]')?.classList.add('open');return false;" class="flex flex-col items-center gap-1 text-gray-500">
+      <i class="fas fa-plus-circle"></i>
+      <span class="text-xs">Добавить</span>
+    </a>
+    <a href="/admin/" class="flex flex-col items-center gap-1 text-gray-500">
+      <i class="fas fa-cog"></i>
+      <span class="text-xs">Настройки</span>
+    </a>
+  </div>
+</footer>
+{% endif %}
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
