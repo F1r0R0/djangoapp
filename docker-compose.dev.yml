@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+  db:
+    image: postgis/postgis:16-master
+    restart: always
+    container_name: habithamster-db
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=habithamster
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234567890
+
+  backend:
+    restart: always
+    container_name: habithamster-backend
+    image: backend
+    build:
+      context: ./backend
+    volumes:
+      - "./backend:/backend"
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.environment
+    depends_on:
+      - db
+
+networks:
+  default:
+    name: habithamster_network

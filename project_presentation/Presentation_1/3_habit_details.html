@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>HabitHamster — Детали привычки</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rubik:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4CAF50', secondary: '#81C784', accent: '#FF9800',
+            background: '#FAF8F5', surface: '#FFFFFF', text: '#2E3333', muted: '#6B7280'
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Rubik', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #FAF8F5; }
+    .glass-card { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.5); }
+    .nav-link { transition: all 0.2s ease; }
+    .nav-link:hover { background: rgba(76,175,80,0.1); }
+    .nav-link.active { background: rgba(76,175,80,0.15); color: #4CAF50; font-weight: 600; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<!-- 🔗 Навигационная панель -->
+<nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <a href="index.html" class="flex items-center gap-2 text-green-600 hover:text-green-700 font-semibold transition-colors">
+      <i class="fas fa-arrow-left"></i>
+      <span class="hidden sm:inline">Презентация</span>
+    </a>
+    <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+      <a href="1_dashboard_with_calendar.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-white hover:shadow-sm">Дашборд</a>
+      <a href="2_analytics.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-white hover:shadow-sm">Аналитика</a>
+      <a href="3_habit_details.html" class="px-3 py-1.5 rounded-md text-sm font-medium bg-white shadow-sm text-green-600">Привычка</a>
+      <a href="4_add_habit_modal.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-white hover:shadow-sm">Добавить</a>
+    </div>
+    <span class="text-sm text-gray-500">Страница 3 из 4</span>
+  </div>
+</nav>
+<div class="pt-20"></div>
+
+<!-- Основной контент -->
+<main class="max-w-7xl mx-auto px-4 py-6 pb-20">
+  
+  <!-- Header -->
+  <header class="flex items-center justify-between mb-8">
+    <div class="flex items-center gap-4">
+      <a href="1_dashboard_with_calendar.html" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+        <i class="fas fa-arrow-left text-gray-600"></i>
+      </a>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800 font-display">Утренняя йога</h1>
+        <p class="text-sm text-gray-600">Фитнес • Ежедневно</p>
+      </div>
+    </div>
+    <button class="px-4 py-2 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-colors flex items-center gap-2">
+      <i class="fas fa-check"></i> Отметить как выполнено
+    </button>
+  </header>
+
+  <!-- Stats Grid -->
+  <div class="grid md:grid-cols-3 gap-4 mb-6">
+    <div class="glass-card p-6 text-center">
+      <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+        <i class="fas fa-percent text-green-600 text-xl"></i>
+      </div>
+      <div class="text-3xl font-bold text-gray-800 mb-1">92%</div>
+      <div class="text-xs text-gray-500 uppercase">Процент выполнения</div>
+      <div class="text-xs text-green-600 font-semibold mt-1">+4% с прошлого месяца</div>
+    </div>
+    <div class="glass-card p-6 text-center">
+      <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+        <i class="fas fa-clock text-blue-600 text-xl"></i>
+      </div>
+      <div class="text-3xl font-bold text-gray-800 mb-1">45ч</div>
+      <div class="text-xs text-gray-500 uppercase">Общее время</div>
+      <div class="text-xs text-gray-600 mt-1">135 сессий завершено</div>
+    </div>
+    <div class="glass-card p-6 text-center">
+      <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+        <i class="fas fa-fire text-orange-600 text-xl"></i>
+      </div>
+      <div class="text-3xl font-bold text-gray-800 mb-1">45д</div>
+      <div class="text-xs text-gray-500 uppercase">Лучшая серия</div>
+      <div class="text-xs text-orange-600 font-semibold mt-1">Текущая: 12 дней</div>
+    </div>
+  </div>
+
+  <!-- Motivation Card -->
+  <div class="glass-card p-6 mb-6 bg-gradient-to-r from-green-50 to-blue-50">
+    <div class="flex items-center gap-4">
+      <img src="https://raw.githubusercontent.com/W1llAnn/Project_workshop_2s/83e9aef20e0e0eed5b23f96ffe9acaec5db75250/image/hamster_favicon.svg" alt="Mascot" class="w-16 h-16 object-contain"/>
+      <div>
+        <p class="text-sm text-gray-700 italic">«Почти у цели! Еще 5 дней, и ты получишь серебряную медаль.»</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Chart -->
+  <div class="glass-card p-6 mb-6">
+    <h3 class="text-lg font-bold text-gray-800 font-display mb-4">Интенсивность активности</h3>
+    <div class="flex items-end gap-2 h-32">
+      <div class="flex-1 bg-green-200 rounded-t h-[60%]"></div>
+      <div class="flex-1 bg-green-300 rounded-t h-[75%]"></div>
+      <div class="flex-1 bg-green-400 rounded-t h-[85%]"></div>
+      <div class="flex-1 bg-green-500 rounded-t h-[95%]"></div>
+      <div class="flex-1 bg-green-400 rounded-t h-[70%]"></div>
+      <div class="flex-1 bg-green-300 rounded-t h-[50%]"></div>
+      <div class="flex-1 bg-green-200 rounded-t h-[40%]"></div>
+    </div>
+    <div class="flex justify-between mt-2 text-xs text-gray-500">
+      <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="glass-card p-6">
+    <h3 class="text-lg font-bold text-gray-800 font-display mb-4">История</h3>
+    <div class="space-y-3">
+      <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+          <i class="fas fa-check text-white text-xs"></i>
+        </div>
+        <div class="flex-grow">
+          <div class="text-sm font-semibold text-gray-800">Сессия завершена</div>
+          <div class="text-xs text-gray-500">Сегодня, 7:15 AM • 20 мин</div>
+        </div>
+        <span class="text-xs font-semibold text-green-600">Идеально</span>
+      </div>
+      <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+          <i class="fas fa-check text-white text-xs"></i>
+        </div>
+        <div class="flex-grow">
+          <div class="text-sm font-semibold text-gray-800">Сессия завершена</div>
+          <div class="text-xs text-gray-500">Вчера, 7:30 AM • 25 мин</div>
+        </div>
+        <span class="text-xs font-semibold text-green-600">Бонус</span>
+      </div>
+      <div class="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+        <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+          <i class="fas fa-times text-white text-xs"></i>
+        </div>
+        <div class="flex-grow">
+          <div class="text-sm font-semibold text-gray-800">Пропущенная сессия</div>
+          <div class="text-xs text-gray-500">19 апр. 2026</div>
+        </div>
+        <span class="text-xs font-semibold text-red-600">Пропущено</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Bottom Nav -->
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-3">
+  <div class="max-w-7xl mx-auto px-4 flex justify-around">
+    <a href="1_dashboard_with_calendar.html" class="flex flex-col items-center gap-1 text-gray-500 hover:text-green-600">
+      <i class="fas fa-th-large"></i>
+      <span class="text-xs">Дашборд</span>
+    </a>
+    <a href="2_analytics.html" class="flex flex-col items-center gap-1 text-gray-500 hover:text-green-600">
+      <i class="fas fa-chart-line"></i>
+      <span class="text-xs">Аналитика</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-1 text-gray-500 hover:text-green-600">
+      <i class="fas fa-trophy"></i>
+      <span class="text-xs">Награды</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-1 text-gray-500 hover:text-green-600">
+      <i class="fas fa-cog"></i>
+      <span class="text-xs">Настройки</span>
+    </a>
+  </div>
+</footer>
+
+<script>
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') window.location.href = '4_add_habit_modal.html';
+  if (e.key === 'ArrowLeft') window.location.href = '2_analytics.html';
+  if (e.key === 'Home') window.location.href = 'index.html';
+});
+</script>
+</body>
+</html>

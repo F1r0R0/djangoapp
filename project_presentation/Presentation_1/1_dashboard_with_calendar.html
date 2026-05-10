@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>HabitHamster — Дашборд</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rubik:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4CAF50', secondary: '#81C784', accent: '#FF9800',
+            background: '#FAF8F5', surface: '#FFFFFF', text: '#2E3333', muted: '#6B7280'
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Rubik', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #FAF8F5; }
+    .glass-card { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.5); }
+    .nav-link { transition: all 0.2s ease; }
+    .nav-link:hover { background: rgba(76,175,80,0.1); }
+    .nav-link.active { background: rgba(76,175,80,0.15); color: #4CAF50; font-weight: 600; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<!-- 🔗 Навигационная панель -->
+<nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <a href="index.html" class="flex items-center gap-2 text-green-600 hover:text-green-700 font-semibold transition-colors">
+      <i class="fas fa-arrow-left"></i>
+      <span class="hidden sm:inline">Презентация</span>
+    </a>
+    <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+      <a href="1_dashboard_with_calendar.html" class="px-3 py-1.5 rounded-md text-sm font-medium bg-white shadow-sm text-green-600">Дашборд</a>
+      <a href="2_analytics.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-white hover:shadow-sm">Аналитика</a>
+      <a href="3_habit_details.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-white hover:shadow-sm">Привычка</a>
+      <a href="4_add_habit_modal.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:bg-white hover:shadow-sm">Добавить</a>
+    </div>
+    <span class="text-sm text-gray-500">Страница 1 из 4</span>
+  </div>
+</nav>
+<div class="pt-20"></div>
+
+<!-- Основной контент -->
+<main class="max-w-7xl mx-auto px-4 py-6">
+  
+  <!-- Header -->
+  <header class="flex items-center justify-between mb-8">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+        <i class="fas fa-hamster text-green-600 text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800 font-display">HabitHamster</h1>
+        <p class="text-sm text-gray-600">Уровень 12 • Мастер Привычек</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+        <i class="fas fa-bell text-gray-600"></i>
+      </button>
+      <button class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center hover:bg-green-200 transition-colors">
+        <i class="fas fa-crown text-green-600"></i>
+      </button>
+      <button class="px-4 py-2 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-colors flex items-center gap-2">
+        <i class="fas fa-plus"></i> Новая привычка
+      </button>
+    </div>
+  </header>
+
+  <!-- Welcome Card -->
+  <div class="glass-card p-6 mb-6 bg-gradient-to-r from-green-50 to-orange-50">
+    <div class="flex items-start gap-4">
+      <img src="https://raw.githubusercontent.com/W1llAnn/Project_workshop_2s/83e9aef20e0e0eed5b23f96ffe9acaec5db75250/image/hamster_favicon.svg" alt="Mascot" class="w-16 h-16 object-contain"/>
+      <div>
+        <h2 class="text-lg font-bold text-gray-800 mb-1">Просыпайся и сияй, Мастер!</h2>
+        <p class="text-sm text-gray-600">Ваша норка выглядит сегодня оживлённой. Вам осталось выполнить 4 привычки для ежедневной серии.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-green-600">12</div>
+      <div class="text-xs text-gray-500 uppercase">Активная серия</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-gray-800">75%</div>
+      <div class="text-xs text-gray-500 uppercase">Прогресс недели</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-orange-500">42/56</div>
+      <div class="text-xs text-gray-500 uppercase">Привычек</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-purple-600">1240 XP</div>
+      <div class="text-xs text-gray-500 uppercase">Опыт</div>
+    </div>
+  </div>
+
+  <!-- Calendar & Habits -->
+  <div class="grid md:grid-cols-3 gap-6">
+    <!-- Habits List -->
+    <div class="md:col-span-2 space-y-4">
+      <h3 class="text-lg font-bold text-gray-800 font-display">Сегодняшние привычки</h3>
+      
+      <div class="glass-card p-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-spa text-green-600"></i>
+          </div>
+          <div>
+            <div class="font-semibold text-gray-800">Утренняя йога</div>
+            <div class="text-xs text-gray-500">15 мин • Каждое утро</div>
+          </div>
+        </div>
+        <button class="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-semibold hover:bg-green-600">
+          <i class="fas fa-check mr-1"></i> Выполнить
+        </button>
+      </div>
+
+      <div class="glass-card p-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-book text-blue-600"></i>
+          </div>
+          <div>
+            <div class="font-semibold text-gray-800">Прочитать 10 страниц</div>
+            <div class="text-xs text-gray-500">Осознанность</div>
+          </div>
+        </div>
+        <button class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50">
+          <i class="fas fa-circle mr-1"></i> Отметить
+        </button>
+      </div>
+
+      <div class="glass-card p-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-plus text-orange-600"></i>
+          </div>
+          <div>
+            <div class="font-semibold text-gray-800">Создать новую привычку</div>
+            <div class="text-xs text-gray-500">Каждое маленькое действие превращается в уютную норку</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mini Calendar -->
+    <div class="glass-card p-4">
+      <h3 class="text-lg font-bold text-gray-800 font-display mb-4">Ноябрь 2023</h3>
+      <div class="grid grid-cols-7 gap-1 text-center text-xs">
+        <div class="text-gray-400">Пн</div><div class="text-gray-400">Вт</div><div class="text-gray-400">Ср</div><div class="text-gray-400">Чт</div><div class="text-gray-400">Пт</div><div class="text-gray-400">Сб</div><div class="text-gray-400">Вс</div>
+        <div class="p-2 text-gray-400">1</div><div class="p-2 text-gray-400">2</div><div class="p-2 text-gray-400">3</div><div class="p-2 text-gray-400">4</div><div class="p-2 text-gray-400">5</div><div class="p-2 bg-green-100 rounded text-green-700 font-semibold">6</div><div class="p-2 bg-green-100 rounded text-green-700 font-semibold">7</div>
+        <div class="p-2 bg-green-100 rounded text-green-700 font-semibold">8</div><div class="p-2 bg-green-100 rounded text-green-700 font-semibold">9</div><div class="p-2 bg-green-100 rounded text-green-700 font-semibold">10</div><div class="p-2 bg-green-100 rounded text-green-700 font-semibold">11</div><div class="p-2 bg-green-100 rounded text-green-700 font-semibold">12</div><div class="p-2 bg-green-500 rounded text-white font-bold">13</div><div class="p-2">14</div>
+        <div class="p-2">15</div><div class="p-2">16</div><div class="p-2">17</div><div class="p-2">18</div><div class="p-2">19</div><div class="p-2">20</div><div class="p-2">21</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Bottom Nav -->
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-3">
+  <div class="max-w-7xl mx-auto px-4 flex justify-around">
+    <a href="1_dashboard_with_calendar.html" class="flex flex-col items-center gap-1 text-green-600">
+      <i class="fas fa-th-large"></i>
+      <span class="text-xs">Дашборд</span>
+    </a>
+    <a href="2_analytics.html" class="flex flex-col items-center gap-1 text-gray-500 hover:text-green-600">
+      <i class="fas fa-chart-line"></i>
+      <span class="text-xs">Статистика</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-1 text-gray-500 hover:text-green-600">
+      <i class="fas fa-trophy"></i>
+      <span class="text-xs">Награды</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-1 text-gray-500 hover:text-green-600">
+      <i class="fas fa-cog"></i>
+      <span class="text-xs">Настройки</span>
+    </a>
+  </div>
+</footer>
+
+<script>
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') window.location.href = '2_analytics.html';
+  if (e.key === 'ArrowLeft') window.location.href = 'index.html';
+  if (e.key === 'Home') window.location.href = 'index.html';
+});
+</script>
+</body>
+</html>
