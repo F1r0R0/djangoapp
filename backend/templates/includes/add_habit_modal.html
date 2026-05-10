@@ -1,6 +1,6 @@
 {% load static %}
 <div data-modal="add" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center p-4 hidden">
-  <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+  <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
     <button type="button" class="absolute top-3 right-3 w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
       onclick="document.querySelector('[data-modal=add]').classList.remove('open')">
       <i class="fas fa-times text-gray-600"></i>

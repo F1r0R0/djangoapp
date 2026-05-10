@@ -38,6 +38,14 @@ from habits.models import (
 admin.site.site_header = 'HabitHamster — админка'
 admin.site.site_title = 'HabitHamster admin'
 admin.site.index_title = 'Управление данными HabitHamster'
+admin.site.empty_value_display = '—'
+
+
+class BrandedAdminMixin:
+    """Adds the project's green admin polish stylesheet to every changelist/form."""
+
+    class Media:
+        css = {'all': ('admin/css/custom.css',)}
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +100,7 @@ class TagCategoryWeightInline(admin.TabularInline):
 
 
 @admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
+class UserProfileAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = (
         'user',
         'level',
@@ -153,7 +161,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 
 @admin.register(Habit)
-class HabitAdmin(admin.ModelAdmin):
+class HabitAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = (
         'title',
         'user',
@@ -220,7 +228,7 @@ class HabitAdmin(admin.ModelAdmin):
 
 
 @admin.register(HabitSchedule)
-class HabitScheduleAdmin(admin.ModelAdmin):
+class HabitScheduleAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = (
         'habit',
         'frequency_type',
@@ -237,7 +245,7 @@ class HabitScheduleAdmin(admin.ModelAdmin):
 
 
 @admin.register(HabitLog)
-class HabitLogAdmin(admin.ModelAdmin):
+class HabitLogAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = (
         'habit',
         'user',
@@ -289,7 +297,7 @@ class HabitLogAdmin(admin.ModelAdmin):
 
 
 @admin.register(HabitTag)
-class HabitTagAdmin(admin.ModelAdmin):
+class HabitTagAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = ('habit', 'tag')
     search_fields = ('habit__title', 'tag__name')
     autocomplete_fields = ('habit', 'tag')
@@ -302,7 +310,7 @@ class HabitTagAdmin(admin.ModelAdmin):
 
 
 @admin.register(ActivityType)
-class ActivityTypeAdmin(admin.ModelAdmin):
+class ActivityTypeAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = ('emoji', 'name', 'tags_count')
     search_fields = ('name',)
     ordering = ('name',)
@@ -316,7 +324,7 @@ class ActivityTypeAdmin(admin.ModelAdmin):
 
 
 @admin.register(TagCategory)
-class TagCategoryAdmin(admin.ModelAdmin):
+class TagCategoryAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = ('name', 'slug', 'parent', 'color', 'children_count', 'created_at')
     list_filter = ('parent',)
     search_fields = ('name', 'slug')
@@ -334,7 +342,7 @@ class TagCategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = ('name', 'slug', 'activity_type', 'habits_count', 'created_at')
     list_filter = ('activity_type',)
     search_fields = ('name', 'slug', 'hint')
@@ -353,7 +361,7 @@ class TagAdmin(admin.ModelAdmin):
 
 
 @admin.register(TagCategoryWeight)
-class TagCategoryWeightAdmin(admin.ModelAdmin):
+class TagCategoryWeightAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = ('tag', 'category', 'weight')
     list_filter = ('category',)
     search_fields = ('tag__name', 'category__name')
@@ -367,7 +375,7 @@ class TagCategoryWeightAdmin(admin.ModelAdmin):
 
 
 @admin.register(Achievement)
-class AchievementAdmin(admin.ModelAdmin):
+class AchievementAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = ('code', 'title', 'condition_type', 'condition_value', 'xp_reward', 'unlocked_count')
     list_filter = ('condition_type',)
     search_fields = ('code', 'title', 'description')
@@ -388,7 +396,7 @@ class AchievementAdmin(admin.ModelAdmin):
 
 
 @admin.register(UserAchievement)
-class UserAchievementAdmin(admin.ModelAdmin):
+class UserAchievementAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = ('user', 'achievement', 'unlocked_at')
     list_filter = ('achievement', 'unlocked_at')
     search_fields = ('user__username', 'achievement__code', 'achievement__title')
@@ -399,7 +407,7 @@ class UserAchievementAdmin(admin.ModelAdmin):
 
 
 @admin.register(Challenge)
-class ChallengeAdmin(admin.ModelAdmin):
+class ChallengeAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = (
         'title',
         'condition_type',
@@ -442,7 +450,7 @@ class ChallengeAdmin(admin.ModelAdmin):
 
 
 @admin.register(UserChallenge)
-class UserChallengeAdmin(admin.ModelAdmin):
+class UserChallengeAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = ('user', 'challenge', 'status', 'progress', 'joined_at', 'completed_at')
     list_filter = ('status', 'challenge')
     search_fields = ('user__username', 'challenge__title')
@@ -458,7 +466,7 @@ class UserChallengeAdmin(admin.ModelAdmin):
 
 
 @admin.register(UserInsight)
-class UserInsightAdmin(admin.ModelAdmin):
+class UserInsightAdmin(BrandedAdminMixin, admin.ModelAdmin):
     list_display = ('title', 'user', 'insight_type', 'is_read', 'period_start', 'period_end', 'created_at')
     list_filter = ('insight_type', 'is_read', 'created_at')
     search_fields = ('title', 'message', 'user__username')
