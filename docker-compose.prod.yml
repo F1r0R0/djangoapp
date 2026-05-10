@@ -45,19 +45,15 @@ services:
       - staticfiles:/backend/staticfiles
     expose:
       - "8000"
-    command: >
-      bash -lc "
+    command:
+      - bash
+      - -lc
+      - |
         python manage.py collectstatic --noinput &&
         python manage.py migrate --noinput &&
         python manage.py seed_taxonomy &&
         (python manage.py createsuperuser --noinput 2>/dev/null || true) &&
-        gunicorn core.wsgi:application
-          --bind 0.0.0.0:8000
-          --workers 3
-          --timeout 60
-          --access-logfile -
-          --error-logfile -
-      "
+        exec gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60 --access-logfile - --error-logfile -
     networks: [habithamster]
 
   nginx:
