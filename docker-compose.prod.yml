@@ -1,0 +1,84 @@
+services:
+  db:
+    image: postgres:16
+    container_name: habithamster-db
+    restart: always
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-habithamster}
+      POSTGRES_USER: ${POSTGRES_USER:-habithamster}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-habithamster} -d ${POSTGRES_DB:-habithamster}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [habithamster]
+
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: habithamster-backend
+    container_name: habithamster-web
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
+      DB_NAME: ${POSTGRES_DB:-habithamster}
+      DB_USER: ${POSTGRES_USER:-habithamster}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: db
+      DB_PORT: "5432"
+      USE_SQLITE: "False"
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-admin}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-admin}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-admin@example.com}
+    volumes:
+      - media:/backend/media
+      - staticfiles:/backend/staticfiles
+    expose:
+      - "8000"
+    command: >
+      bash -lc "
+        python manage.py collectstatic --noinput &&
+        python manage.py migrate --noinput &&
+        python manage.py seed_taxonomy &&
+        (python manage.py createsuperuser --noinput 2>/dev/null || true) &&
+        gunicorn core.wsgi:application
+          --bind 0.0.0.0:8000
+          --workers 3
+          --timeout 60
+          --access-logfile -
+          --error-logfile -
+      "
+    networks: [habithamster]
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: habithamster-nginx
+    restart: always
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - staticfiles:/srv/static:ro
+      - media:/srv/media:ro
+    networks: [habithamster]
+
+volumes:
+  db_data:
+  media:
+  staticfiles:
+
+networks:
+  habithamster:
+    name: habithamster
