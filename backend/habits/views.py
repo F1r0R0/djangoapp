@@ -433,7 +433,47 @@ def habit_delete(request, habit_id: int):
     habit.is_active = False
     habit.save(update_fields=['is_active', 'updated_at'])
     messages.success(request, f'Привычка "{habit.title}" архивирована.')
-    return redirect('dashboard')
+    return redirect(request.POST.get('next') or 'dashboard')
+
+
+@login_required
+@require_POST
+def habit_restore(request, habit_id: int):
+    habit = get_object_or_404(Habit, id=habit_id, user=request.user)
+    habit.is_active = True
+    habit.save(update_fields=['is_active', 'updated_at'])
+    messages.success(request, f'Привычка "{habit.title}" возвращена в активные.')
+    return redirect(request.POST.get('next') or 'dashboard')
+
+
+@login_required
+@require_POST
+def habit_destroy(request, habit_id: int):
+    habit = get_object_or_404(Habit, id=habit_id, user=request.user)
+    title = habit.title
+    habit.delete()
+    messages.success(request, f'Привычка "{title}" удалена безвозвратно.')
+    return redirect(request.POST.get('next') or 'dashboard')
+
+
+@login_required
+def habit_archive_list(request):
+    archived = (
+        Habit.objects.filter(user=request.user, is_active=False)
+        .select_related('schedule')
+        .prefetch_related('tags')
+        .order_by('-updated_at')
+    )
+    items: list[dict] = []
+    for habit in archived:
+        items.append(
+            {
+                'habit': habit,
+                'completed_count': habit_completed_count(habit),
+                'total_minutes': habit_total_minutes(habit),
+            }
+        )
+    return render(request, 'habits_archive.html', {'items': items})
 
 
 @login_required
