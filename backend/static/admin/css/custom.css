@@ -1,0 +1,75 @@
+/* HabitHamster admin polish: green brand colours, smoother focus, nicer badges. */
+:root {
+  --primary: #4CAF50;
+  --secondary: #388E3C;
+  --link-fg: #2E7D32;
+  --link-hover-color: #1B5E20;
+  --header-color: #ffffff;
+  --header-branding-color: #ffffff;
+  --header-bg: linear-gradient(90deg, #4CAF50 0%, #66BB6A 100%);
+  --module-bg: #F1F8E9;
+  --button-bg: #4CAF50;
+  --button-hover-bg: #43A047;
+  --default-button-bg: #4CAF50;
+  --default-button-hover-bg: #388E3C;
+}
+
+#header {
+  background: linear-gradient(90deg, #4CAF50 0%, #66BB6A 100%) !important;
+  padding: 14px 28px;
+}
+
+#branding h1, #branding h1 a:link, #branding h1 a:visited {
+  color: #fff !important;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+div.breadcrumbs {
+  background: #F1F8E9;
+  color: #2E7D32;
+  border-bottom: 1px solid #C8E6C9;
+}
+div.breadcrumbs a { color: #2E7D32; }
+
+.module h2, .module caption, .inline-group h2 {
+  background: #4CAF50 !important;
+  color: #fff !important;
+  letter-spacing: .25px;
+}
+
+a.button, input[type=submit], input[type=button], .submit-row input, a.button:link, a.button:visited {
+  background: #4CAF50;
+  border: none;
+  transition: background-color .15s ease, transform .15s ease, box-shadow .2s ease;
+}
+a.button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover {
+  background: #388E3C;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(76,175,80,.25);
+}
+
+input[type=submit].default, .submit-row input.default {
+  background: #388E3C;
+}
+
+.results { border-radius: 8px; overflow: hidden; }
+.results table thead th { background: #E8F5E9; color: #2E7D32; }
+.results table tr:hover { background: #F1F8E9; }
+
+#changelist-filter h3 { color: #2E7D32; font-weight: 700; }
+#changelist-filter li.selected { border-left: 3px solid #4CAF50; padding-left: 4px; }
+#changelist-filter li.selected a { color: #2E7D32; font-weight: 600; }
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid rgba(76,175,80,.25);
+  outline-offset: 0;
+  border-color: #4CAF50 !important;
+}
+
+.object-tools a { transition: background-color .15s ease, transform .15s ease; }
+.object-tools a:hover { transform: translateY(-1px); }
+
+/* Smaller progress badges in changelist look nicer with rounded corners */
+.field-status_badge code,
+.field-colored_icon code { background: #F5F5F5; padding: 2px 6px; border-radius: 6px; }
