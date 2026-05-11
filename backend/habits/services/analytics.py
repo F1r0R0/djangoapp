@@ -17,6 +17,42 @@ WEEKDAY_FULL_RU = {
 }
 
 
+def user_period_progress(user, start: date, end: date) -> dict:
+    """Completion progress for ``user`` over the inclusive ``[start, end]`` range.
+
+    Returns a dict with:
+      * ``expected``: count of (active habit × day) pairs where the habit's
+        schedule says it was due in the period (or no schedule = always due).
+        This is the denominator for a fair "x of y" progress card.
+      * ``done``: number of HabitLog rows in the period whose status counts
+        as success ("done" or "partial").
+      * ``rate``: integer 0..100 = ``done / expected`` capped at 100.
+
+    Using ``expected`` (rather than the count of logged rows) is what makes
+    the dashboard's weekly progress card honest — otherwise a user who only
+    ever clicks "выполнить" would always read 100%.
+    """
+    habits = list(
+        Habit.objects.filter(user=user, is_active=True).select_related('schedule')
+    )
+    expected = 0
+    cursor = start
+    while cursor <= end:
+        for habit in habits:
+            schedule = getattr(habit, 'schedule', None)
+            if schedule is None or schedule.is_due_on(cursor):
+                expected += 1
+        cursor += timedelta(days=1)
+    done = HabitLog.objects.filter(
+        user=user,
+        log_date__gte=start,
+        log_date__lte=end,
+        status__in=['done', 'partial'],
+    ).count()
+    rate = min(int(100 * done / expected), 100) if expected else 0
+    return {'expected': expected, 'done': done, 'rate': rate}
+
+
 def completion_rate_for_habit(habit: Habit, days: int = 30) -> int:
     """Percent of expected days the habit was done in the last `days` days."""
     today = timezone.localdate()

@@ -100,6 +100,17 @@
               <span class="hidden group-hover:inline">Снять</span>
             </button>
           </form>
+        {% elif item.today_status == 'partial' %}
+          <form method="post" action="{% url 'habit_log_undo' item.habit.id %}">
+            {% csrf_token %}
+            <button title="Снять отметку"
+                    class="group px-4 py-2 bg-yellow-100 text-yellow-700 hover:bg-red-100 hover:text-red-700 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-percent group-hover:hidden"></i>
+              <i class="fas fa-rotate-left hidden group-hover:inline"></i>
+              <span class="group-hover:hidden">Частично</span>
+              <span class="hidden group-hover:inline">Снять</span>
+            </button>
+          </form>
         {% elif item.today_status == 'skipped' %}
           <form method="post" action="{% url 'habit_log_undo' item.habit.id %}">
             {% csrf_token %}
