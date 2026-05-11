@@ -75,11 +75,25 @@ class HabitForm(forms.ModelForm):
     def save(self, user, commit=True):
         instance = super().save(commit=False)
         instance.user = user
-        # If the user picked target_type=minutes, copy duration into target_value.
-        duration = self.cleaned_data.get('duration_minutes')
-        if instance.target_type == 'minutes' and duration:
-            instance.target_value = duration
+        # Reconcile target_type / target_value / target_unit. The modal
+        # ships hidden defaults of ``target_value=15`` and ``target_unit=minutes``
+        # regardless of the chosen type, so we normalise on save:
+        #   * minutes → use the duration input as the value, unit = minutes
+        #   * check   → boolean done/skip, value/unit are meaningless → 0/'time'
+        #   * count   → keep submitted value, default unit to 'times'
+        duration = self.cleaned_data.get('duration_minutes') or 0
+        if instance.target_type == 'minutes':
+            instance.target_value = duration or 15
             instance.target_unit = 'minutes'
+        elif instance.target_type == 'check':
+            instance.target_value = 1
+            if instance.target_unit == 'minutes':
+                instance.target_unit = 'times'
+        else:  # count
+            if not instance.target_value:
+                instance.target_value = 1
+            if instance.target_unit == 'minutes':
+                instance.target_unit = 'times'
         instance.save()
         # Schedule.
         sched, _ = HabitSchedule.objects.get_or_create(habit=instance)
@@ -106,7 +120,10 @@ class HabitForm(forms.ModelForm):
 def _slugify_unique(name: str) -> str:
     from django.utils.text import slugify
 
-    base = slugify(name) or 'tag'
+    # ``allow_unicode=True`` keeps Cyrillic readable in the URL rather than
+    # falling back to the literal 'tag' suffix chain for every tag (every
+    # Russian tag would collide on the base "tag" without it).
+    base = slugify(name, allow_unicode=True) or 'tag'
     candidate = base
     i = 1
     while Tag.objects.filter(slug=candidate).exists():

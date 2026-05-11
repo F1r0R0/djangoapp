@@ -116,6 +116,15 @@ class HabitLogSerializer(serializers.ModelSerializer):
             'mood_score',
         ]
 
+    def validate_habit(self, habit: Habit) -> Habit:
+        # The default ``habit`` field accepts any PK in ``Habit.objects.all()``,
+        # which would let an authenticated user log against someone else's
+        # habit (IDOR). Restrict it to habits owned by the current user.
+        request = self.context.get('request')
+        if request is None or habit.user_id != request.user.id:
+            raise serializers.ValidationError('Habit not found.')
+        return habit
+
     def create(self, validated_data):
         request = self.context['request']
         validated_data['user'] = request.user

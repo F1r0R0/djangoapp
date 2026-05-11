@@ -125,7 +125,7 @@
       {% endfor %}
     </div>
     {% if best_day %}
-      <p class="text-xs text-gray-500 italic mt-4">{{ best_day.name }} — твой самый продуктивный день. Ты лидер в начале недели.</p>
+      <p class="text-xs text-gray-500 italic mt-4">{{ best_day.name }} — твой самый продуктивный день ({{ best_day.rate }}%).</p>
     {% endif %}
   </div>
 
@@ -138,9 +138,9 @@
       {% for entry in achievements_data %}
         <div class="text-center transition-transform hover:scale-105 {% if not entry.unlocked %}opacity-40{% endif %}">
           <div class="w-14 h-14 mx-auto rounded-full flex items-center justify-center
-              {% if entry.unlocked %}bg-{{ entry.achievement.condition_type|cut:'_' }}-100{% else %}bg-gray-100{% endif %}">
+              {% if entry.unlocked %}{{ entry.badge_bg }}{% else %}bg-gray-100{% endif %}">
             <i class="fas fa-{{ entry.achievement.icon|default:'medal' }} text-xl
-              {% if entry.unlocked %}text-green-600{% else %}text-gray-400{% endif %}"></i>
+              {% if entry.unlocked %}{{ entry.badge_fg }}{% else %}text-gray-400{% endif %}"></i>
           </div>
           <div class="text-xs font-semibold mt-2">{{ entry.achievement.title }}</div>
           <div class="text-[10px] text-gray-400">{{ entry.achievement.description|truncatechars:24 }}</div>

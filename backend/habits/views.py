@@ -23,8 +23,10 @@ from habits.services.analytics import (
     user_activity_per_day,
     user_best_days,
     user_category_breakdown,
+    user_period_progress,
 )
 from habits.services.streak import habit_best_streak, habit_current_streak
+from django.utils.http import url_has_allowed_host_and_scheme
 
 
 # ---------------------------------------------------------------------------
@@ -130,14 +132,12 @@ def dashboard(request):
         if len(calendar_cells) >= 42:
             break
 
-    weekly_total = HabitLog.objects.filter(
-        user=request.user,
-        log_date__gte=today - timedelta(days=6),
-        log_date__lte=today,
-    )
-    wt_total = weekly_total.count() or 1
-    wt_done = weekly_total.filter(status__in=['done', 'partial']).count()
-    weekly_completion_rate = int(100 * wt_done / wt_total)
+    # Weekly progress card. Use the current ISO week (Mon–Sun) for parity
+    # with the calendar page, and the expected-vs-done denominator from
+    # services.analytics so the rate isn't inflated to ~100% just because
+    # the user only ever logs successful completions.
+    week_start, week_end = _week_bounds(today)
+    week_progress = user_period_progress(request.user, week_start, week_end)
 
     insights = UserInsight.objects.filter(user=request.user).order_by('-created_at')[:3]
 
@@ -148,10 +148,10 @@ def dashboard(request):
         'habits': items,
         'due_today': due_today,
         'done_today': done_today,
-        'weekly_completion_rate': weekly_completion_rate,
-        'wt_done': wt_done,
-        'wt_total': max(weekly_total.count(), 1),
-        'wt_total_real': weekly_total.count(),
+        'weekly_completion_rate': week_progress['rate'],
+        'wt_done': week_progress['done'],
+        'wt_total': max(week_progress['expected'], 1),
+        'wt_total_real': week_progress['expected'],
         'calendar_cells': calendar_cells,
         'calendar_month': today,
         'insights': insights,
@@ -261,9 +261,11 @@ def calendar_view(request):
         slot_time = None
         if schedule:
             slot_time = schedule.window_start or schedule.reminder_time
-        # Only fully-done logs count as opaque pills. Partial / skipped /
-        # unlogged habits render as faded "planned" pills.
-        is_done = bool(log and log.status == 'done')
+        # Both 'done' and 'partial' count as a completed pill so the calendar
+        # matches the dashboard's "сегодня X / Y" counters. A 'partial' log
+        # still represents progress toward the habit and should not look like
+        # an unchecked slot.
+        is_done = bool(log and log.status in {'done', 'partial'})
         return {
             'habit': habit,
             'time': slot_time,
@@ -334,16 +336,15 @@ def calendar_view(request):
             )
             cursor += timedelta(days=1)
 
-    # Weekly progress card on the banner.
+    # Weekly progress card on the banner. The denominator is the number of
+    # (active habit × due day) pairs in the current ISO week — see the
+    # docstring of ``user_period_progress`` for why we don't divide by the
+    # raw log count.
     week_start, week_end = _week_bounds(today)
-    week_logs = HabitLog.objects.filter(
-        user=request.user,
-        log_date__gte=week_start,
-        log_date__lte=week_end,
-    )
-    wt_total_real = week_logs.count()
-    wt_done = week_logs.filter(status__in=['done', 'partial']).count()
-    weekly_completion_rate = int(100 * wt_done / wt_total_real) if wt_total_real else 0
+    week_progress = user_period_progress(request.user, week_start, week_end)
+    weekly_completion_rate = week_progress['rate']
+    wt_done = week_progress['done']
+    wt_total_real = week_progress['expected']
 
     # Display title ("Ноябрь 2023" / a date / a week range).
     if view_mode == 'day':
@@ -391,7 +392,7 @@ def habit_create(request):
     else:
         errors = '; '.join(msg for msgs in form.errors.values() for msg in msgs)
         messages.error(request, f'Не удалось создать привычку: {errors}')
-    return redirect(request.POST.get('next') or 'dashboard')
+    return redirect(_safe_next(request))
 
 
 _STATUS_LABELS = {
@@ -406,6 +407,22 @@ def _undo_extra_tags(url: str, label: str = 'Отменить') -> str:
     return json.dumps({'undo': url, 'label': label}, ensure_ascii=False)
 
 
+def _safe_next(request, fallback: str = 'dashboard') -> str:
+    """Return a same-origin ``next`` URL or fall back to a named route.
+
+    ``next`` is propagated through hidden form inputs in many templates; an
+    attacker could craft a link with ``?next=https://evil.example`` and a
+    successful POST would redirect there. ``url_has_allowed_host_and_scheme``
+    guards against that classic open-redirect pattern.
+    """
+    raw = request.POST.get('next') or request.GET.get('next')
+    if raw and url_has_allowed_host_and_scheme(
+        raw, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return raw
+    return fallback
+
+
 @login_required
 @require_POST
 def habit_log_today(request, habit_id: int):
@@ -414,7 +431,10 @@ def habit_log_today(request, habit_id: int):
     status = request.POST.get('status', 'done')
     if status not in {'done', 'partial', 'skipped'}:
         status = 'done'
-    duration = int(request.POST.get('duration_minutes') or 0)
+    try:
+        duration = max(int(request.POST.get('duration_minutes') or 0), 0)
+    except (TypeError, ValueError):
+        duration = 0
     note = request.POST.get('note', '')
     HabitLog.objects.update_or_create(
         habit=habit,
@@ -433,7 +453,7 @@ def habit_log_today(request, habit_id: int):
         f'Отметка для "{habit.title}" — {label}.',
         extra_tags=_undo_extra_tags(reverse('habit_log_undo', args=[habit.id]), 'Отменить'),
     )
-    return redirect(request.POST.get('next') or 'dashboard')
+    return redirect(_safe_next(request))
 
 
 @login_required
@@ -443,10 +463,12 @@ def habit_log_undo(request, habit_id: int):
     today = timezone.localdate()
     deleted, _ = HabitLog.objects.filter(habit=habit, user=request.user, log_date=today).delete()
     if deleted:
-        messages.success(request, f'Отметка "готово" для "{habit.title}" снята.')
+        # The post_delete signal recomputes current_streak / best_streak for us
+        # so the dashboard pill stays accurate.
+        messages.success(request, f'Отметка для "{habit.title}" снята.')
     else:
         messages.info(request, f'У "{habit.title}" сегодня и так не было отметки.')
-    return redirect(request.POST.get('next') or 'dashboard')
+    return redirect(_safe_next(request))
 
 
 @login_required
@@ -460,7 +482,7 @@ def habit_delete(request, habit_id: int):
         f'Привычка "{habit.title}" архивирована.',
         extra_tags=_undo_extra_tags(reverse('habit_restore', args=[habit.id]), 'Вернуть'),
     )
-    return redirect(request.POST.get('next') or 'dashboard')
+    return redirect(_safe_next(request))
 
 
 @login_required
@@ -470,7 +492,7 @@ def habit_restore(request, habit_id: int):
     habit.is_active = True
     habit.save(update_fields=['is_active', 'updated_at'])
     messages.success(request, f'Привычка "{habit.title}" возвращена в активные.')
-    return redirect(request.POST.get('next') or 'dashboard')
+    return redirect(_safe_next(request))
 
 
 @login_required
@@ -480,7 +502,7 @@ def habit_destroy(request, habit_id: int):
     title = habit.title
     habit.delete()
     messages.success(request, f'Привычка "{title}" удалена безвозвратно.')
-    return redirect(request.POST.get('next') or 'dashboard')
+    return redirect(_safe_next(request))
 
 
 @login_required
@@ -562,18 +584,35 @@ def analytics(request):
     insights = UserInsight.objects.filter(user=request.user).order_by('-created_at')[:5]
     achievements = Achievement.objects.all()
     unlocked_ids = set(UserAchievement.objects.filter(user=request.user).values_list('achievement_id', flat=True))
-    achievements_data = [
-        {
-            'achievement': a,
-            'unlocked': a.id in unlocked_ids,
-        }
-        for a in achievements
-    ]
-    # Average completion rate.
-    if best_days:
-        avg = round(sum(b['rate'] for b in best_days) / len(best_days))
-    else:
-        avg = 0
+    # Map condition_type → Tailwind colour pair. The template can't compute
+    # this dynamically because Tailwind's JIT only emits classes it sees as
+    # literal strings — interpolating "bg-{{type}}-100" produced invalid
+    # classes like `bg-streak-100` that silently fall back to no colour.
+    _BADGE_PALETTE = {
+        'streak': ('bg-orange-100', 'text-orange-600'),
+        'completion_count': ('bg-green-100', 'text-green-600'),
+        'total_time': ('bg-blue-100', 'text-blue-600'),
+        'xp': ('bg-purple-100', 'text-purple-600'),
+        'custom': ('bg-amber-100', 'text-amber-600'),
+    }
+    achievements_data = []
+    for a in achievements:
+        bg, fg = _BADGE_PALETTE.get(a.condition_type, ('bg-green-100', 'text-green-600'))
+        achievements_data.append(
+            {
+                'achievement': a,
+                'unlocked': a.id in unlocked_ids,
+                'badge_bg': bg,
+                'badge_fg': fg,
+            }
+        )
+    # Average completion rate. Naively averaging each weekday's percentage
+    # double-counts days where the user has no due habits at all (rate=0
+    # because expected=0) and silently drags the headline number down. Weight
+    # the average by the actual number of expected slots instead.
+    total_expected = sum(b['expected'] for b in best_days)
+    total_done = sum(b['done'] for b in best_days)
+    avg = int(100 * total_done / total_expected) if total_expected else 0
 
     # Donut chart needs cumulative offsets.
     chart_categories = []
@@ -591,17 +630,21 @@ def analytics(request):
 
     # Find best/weak day for the highlight card.
     best_day = best_days[0] if best_days else None
-    morning_done = HabitLog.objects.filter(
+    # "Morning %" — share of successful logs created before local-noon. We have
+    # to compute the hour in the user's timezone in Python because Django's
+    # ``__hour`` ORM lookup extracts in the database's connection timezone
+    # (UTC), which on a Europe/Moscow site shifts "morning" by +3h.
+    recent_done_logs = HabitLog.objects.filter(
         user=request.user,
         status__in=['done', 'partial'],
         log_date__gte=timezone.localdate() - timedelta(days=days - 1),
-        created_at__hour__lt=12,
-    ).count()
-    total_done = HabitLog.objects.filter(
-        user=request.user,
-        status__in=['done', 'partial'],
-        log_date__gte=timezone.localdate() - timedelta(days=days - 1),
-    ).count()
+    ).only('created_at')
+    total_done = 0
+    morning_done = 0
+    for log in recent_done_logs:
+        total_done += 1
+        if timezone.localtime(log.created_at).hour < 12:
+            morning_done += 1
     morning_pct = int(100 * morning_done / total_done) if total_done else 0
 
     # Build chart bars (downsample if too many).

@@ -180,9 +180,11 @@
     <a href="{% url 'habit_archive' %}" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg {% if request.resolver_match.url_name == 'habit_archive' %}active{% else %}text-gray-600{% endif %}">
       <i class="fas fa-box-archive w-5"></i> Архив
     </a>
+    {% if user.is_staff %}
     <a href="/admin/" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600">
-      <i class="fas fa-cog w-5"></i> Настройки
+      <i class="fas fa-cog w-5"></i> Админка
     </a>
+    {% endif %}
   </nav>
   <button onclick="document.querySelector('[data-modal=add]')?.classList.add('open')"
           class="mt-4 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-semibold shadow-sm">
@@ -241,9 +243,9 @@
       <i class="fas fa-plus-circle"></i>
       <span class="text-xs">Добавить</span>
     </a>
-    <a href="/admin/" class="flex flex-col items-center gap-1 text-gray-500">
-      <i class="fas fa-cog"></i>
-      <span class="text-xs">Настройки</span>
+    <a href="{% url 'habit_archive' %}" class="flex flex-col items-center gap-1 {% if request.resolver_match.url_name == 'habit_archive' %}text-green-600{% else %}text-gray-500{% endif %}">
+      <i class="fas fa-box-archive"></i>
+      <span class="text-xs">Архив</span>
     </a>
   </div>
 </footer>

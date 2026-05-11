@@ -1,6 +1,6 @@
-"""Signals: profile auto-creation, gamification on log save."""
+"""Signals: profile auto-creation, gamification on log save / delete."""
 from django.conf import settings
-from django.db.models.signals import post_save
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
 from habits.models import HabitLog, UserProfile
@@ -23,3 +23,14 @@ def on_habit_log_saved(sender, instance: HabitLog, created, **kwargs):
     check_achievements(profile)
     if created:
         generate_insights(instance.user)
+
+
+@receiver(post_delete, sender=HabitLog)
+def on_habit_log_deleted(sender, instance: HabitLog, **kwargs):
+    # When a log is removed (undo button, admin action, cascade from habit
+    # destroy) the cached ``current_streak`` / ``best_streak`` on the user's
+    # profile would otherwise stay at their pre-delete values. Recompute so
+    # the dashboard "Серия N дн." pill reflects reality.
+    profile = UserProfile.objects.filter(user=instance.user).first()
+    if profile is not None:
+        refresh_streaks(profile)
