@@ -36,16 +36,17 @@
   .pill-red    { background: #FFCDD2; color: #C62828; }
   .pill-pink   { background: #F8BBD0; color: #AD1457; }
 
-  /* "Planned" (not done yet today) state — dashed outline + visibly faded. */
-  .cal-pill.is-planned {
+  /* "Done" (already completed today) state — dashed outline + visibly faded
+     so the eye lands on the habits that still need attention. Planned (not
+     done) pills keep their solid, bright color. */
+  .cal-pill { opacity: 1; }
+  .cal-pill.is-done {
     background: transparent;
     border: 1.5px dashed currentColor;
-    opacity: .45;
+    opacity: .55;
   }
-  .cal-pill.is-planned .cat,
-  .cal-pill.is-planned .ttl { color: #6B7280; }
-  /* Done pills are fully opaque. */
-  .cal-pill { opacity: 1; }
+  .cal-pill.is-done .cat,
+  .cal-pill.is-done .ttl { color: #6B7280; }
 
   /* Hour cell label. */
   .cal-hour {
@@ -100,11 +101,12 @@
   .month-cell .num { font-size: 13px; font-weight: 600; }
   .month-cell.today .num { color: #FFF; background: #4CAF50; border-radius: 999px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
   .month-cell .mini-pill { font-size: 9px; padding: 1px 6px; border-radius: 6px; truncate: ellipsis; max-width: 100%; overflow: hidden; white-space: nowrap; opacity: 1; }
-  /* Same opacity rule for month-view mini-pills: not done = transparent, done = solid. */
-  .month-cell .mini-pill.is-planned {
+  /* Month-view mini-pills follow the same rule: done = faded outline,
+     not-done = solid, bright color. */
+  .month-cell .mini-pill.is-done {
     background: transparent;
     border: 1px dashed currentColor;
-    opacity: .45;
+    opacity: .55;
   }
 </style>
 {% endblock %}
@@ -192,7 +194,7 @@
           </div>
           {% for pill in cell.pills %}
             <a href="{% url 'habit_detail' pill.habit.id %}"
-               class="mini-pill pill-{{ pill.habit.color }} {% if pill.is_planned %}is-planned{% endif %}">
+               class="mini-pill pill-{{ pill.habit.color }} {% if pill.is_done %}is-done{% endif %}">
               {{ pill.habit.title }}
             </a>
           {% endfor %}
@@ -220,8 +222,11 @@
         <div class="cal-untimed">
           {% for pill in day.untimed %}
             <a href="{% url 'habit_detail' pill.habit.id %}"
-               class="cal-pill pill-{{ pill.habit.color }} {% if pill.is_planned %}is-planned{% endif %}">
-              <span class="ttl">{{ pill.habit.title }}</span>
+               class="cal-pill pill-{{ pill.habit.color }} {% if pill.is_done %}is-done{% endif %}">
+              <span class="ttl flex items-center gap-1">
+                {{ pill.habit.title }}
+                {% if pill.is_done %}<i class="fas fa-circle-check text-[11px] opacity-70"></i>{% endif %}
+              </span>
             </a>
           {% endfor %}
         </div>
@@ -236,7 +241,7 @@
             {% for slot in day.slots %}{% if slot.hour == hour %}
               {% for pill in slot.pills %}
                 <a href="{% url 'habit_detail' pill.habit.id %}"
-                   class="cal-pill pill-{{ pill.habit.color }} {% if pill.is_planned %}is-planned{% endif %}">
+                   class="cal-pill pill-{{ pill.habit.color }} {% if pill.is_done %}is-done{% endif %}">
                   <span class="cat">
                     {% if pill.habit.icon == 'spa' %}йога
                     {% elif pill.habit.icon == 'dumbbell' %}спорт
