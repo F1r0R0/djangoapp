@@ -17,6 +17,12 @@ dependencies = [
     'vercel_blob==0.4.2',
 ]
 
+[project.optional-dependencies]
+dev = [
+    'pytest==8.3.3',
+    'pytest-django==4.9.0',
+]
+
 [tool.setuptools]
 py-modules = []
 

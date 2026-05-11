@@ -19,10 +19,12 @@ from habits.services.analytics import (
     completion_rate_for_habit,
     habit_completed_count,
     habit_heatmap,
+    habit_hour_distribution,
     habit_total_minutes,
     user_activity_per_day,
     user_best_days,
     user_category_breakdown,
+    user_habit_correlations,
     user_period_progress,
 )
 from habits.services.streak import habit_best_streak, habit_current_streak
@@ -557,6 +559,33 @@ def habit_detail(request, habit_id: int):
 
     history = habit.logs.order_by('-log_date')[:8]
 
+    # Hour-of-day distribution — "когда я обычно это делаю" over last 90 days.
+    hour_dist = habit_hour_distribution(habit, days=90)
+    max_hour_count = max(hour_dist['hours']) or 1
+    peak_hour = hour_dist['peak_hour']
+    best_window = hour_dist['best_window']
+    hour_bars = [
+        {
+            'hour': h,
+            'count': cnt,
+            # Reserve a tiny min height for non-empty hours so single logs
+            # are still visible on the chart.
+            'pct': max(int(100 * cnt / max_hour_count), 6 if cnt else 0),
+            'is_peak': (peak_hour is not None and h == peak_hour),
+            'in_window': (
+                best_window is not None
+                and (
+                    (best_window['start'] <= best_window['end_exclusive'] and best_window['start'] <= h < best_window['end_exclusive'])
+                    or (best_window['start'] > best_window['end_exclusive'] and (h >= best_window['start'] or h < best_window['end_exclusive']))
+                )
+            ),
+            'bg': hour_dist['hour_bg'][h],
+            'label': f'{h:02d}:00',
+        }
+        for h, cnt in enumerate(hour_dist['hours'])
+    ]
+    peak_hour_label = f'{peak_hour:02d}:00' if peak_hour is not None else None
+
     context = {
         'habit': habit,
         'today_log': today_log,
@@ -570,6 +599,12 @@ def habit_detail(request, habit_id: int):
         'heatmap_rows': by_weekday,
         'intensity_bars': intensity_bars,
         'history': history,
+        'hour_bars': hour_bars,
+        'hour_buckets': hour_dist['buckets'],
+        'peak_hour_label': peak_hour_label,
+        'peak_bucket': hour_dist['peak_bucket'],
+        'hour_total': hour_dist['total'],
+        'best_window': best_window,
     }
     return render(request, 'habit_detail.html', context)
 
@@ -658,6 +693,12 @@ def analytics(request):
         for row in activity
     ]
 
+    # Habit pair correlations — only meaningful on the month/year periods
+    # where the user has enough history. Skip on the 7-day view.
+    correlations = []
+    if days >= 14:
+        correlations = user_habit_correlations(request.user, days=days)
+
     context = {
         'period': period,
         'days': days,
@@ -671,5 +712,6 @@ def analytics(request):
         'best_day': best_day,
         'avg_completion': avg,
         'morning_pct': morning_pct,
+        'correlations': correlations,
     }
     return render(request, 'analytics.html', context)

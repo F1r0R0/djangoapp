@@ -22,9 +22,18 @@
     line-height: 1.2;
     margin: 4px 6px;
     min-height: 44px;
-    transition: transform .15s ease, box-shadow .2s ease;
+    transition: transform .18s ease, box-shadow .22s ease,
+                opacity .25s ease, background-color .25s ease,
+                border-color .25s ease;
+    animation: pill-enter .45s cubic-bezier(.22,1,.36,1) both;
   }
-  .cal-pill:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, .08); }
+  .cal-pill:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 22px rgba(0, 0, 0, .12); }
+
+  /* Reveal pills as a subtle pop on first paint. */
+  @keyframes pill-enter {
+    from { opacity: 0; transform: translateY(6px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
+  }
   .cal-pill .cat { font-size: 9px; text-transform: uppercase; letter-spacing: .04em; opacity: .7; font-weight: 700; }
   .cal-pill .ttl { font-weight: 600; margin-top: 2px; word-break: break-word; }
 
