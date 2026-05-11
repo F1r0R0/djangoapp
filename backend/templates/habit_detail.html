@@ -145,38 +145,75 @@
 
 <!-- Time of day distribution -->
 <div class="glass-card p-6 mb-6 anim-fade-up" style="animation-delay:.12s">
-  <div class="flex items-center justify-between mb-4">
+  <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
     <div>
       <h2 class="text-lg font-bold">Когда ты обычно это делаешь</h2>
-      <p class="text-xs text-gray-500">Часовая разбивка отметок за 90 дней</p>
+      <p class="text-xs text-gray-500">Часовая разбивка отметок за 90 дней (формат 24 ч)</p>
     </div>
-    {% if peak_hour_label %}
-      <span class="text-xs bg-{{ habit.color }}-100 text-{{ habit.color }}-700 px-2 py-1 rounded-full font-semibold">
-        Пик: {{ peak_hour_label }} ({{ peak_bucket }})
-      </span>
-    {% endif %}
+    <div class="flex flex-wrap gap-2">
+      {% if peak_hour_label %}
+        <span class="text-xs bg-green-500 text-white px-3 py-1 rounded-full font-semibold flex items-center gap-1">
+          <i class="fas fa-bullseye text-[10px]"></i>
+          Пик: {{ peak_hour_label }} · {{ peak_bucket }}
+        </span>
+      {% endif %}
+      {% if best_window %}
+        <span class="text-xs bg-green-50 text-green-700 border border-green-200 px-3 py-1 rounded-full font-semibold flex items-center gap-1">
+          <i class="fas fa-clock text-[10px]"></i>
+          Лучшее окно: {{ best_window.label }} ({{ best_window.pct }}%)
+        </span>
+      {% endif %}
+    </div>
   </div>
+
   {% if hour_total %}
-    <div class="grid grid-cols-4 gap-2 mb-4">
+    <!-- Chart with colored bucket bands behind the bars. -->
+    <div class="relative h-40 mb-1">
+      <!-- Bars (foreground) -->
+      <div class="absolute inset-0 flex items-end gap-px">
+        {% for bar in hour_bars %}
+          <div class="relative flex-1 flex flex-col items-center justify-end h-full group"
+               style="background-color: {{ bar.bg }};"
+               title="{{ bar.label }} — {{ bar.count }} отметок">
+            {% if bar.is_peak and bar.count %}
+              <span class="absolute -top-5 text-[10px] font-bold text-green-700 whitespace-nowrap">
+                {{ bar.label }}
+              </span>
+            {% endif %}
+            {% if bar.count %}
+              <div class="w-full rounded-t transition-colors
+                   {% if bar.is_peak %}bg-green-600 ring-2 ring-green-300{% elif bar.in_window %}bg-green-400{% else %}bg-{{ habit.color }}-300 group-hover:bg-{{ habit.color }}-500{% endif %}"
+                   style="height: {{ bar.pct }}%"></div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- 24h axis ticks every 3 hours (00, 03, 06, 09, 12, 15, 18, 21, 24). -->
+    <div class="relative h-4 text-[10px] text-gray-500">
+      <span class="absolute left-0">00</span>
+      <span class="absolute left-1/8" style="left:12.5%;transform:translateX(-50%);">03</span>
+      <span class="absolute" style="left:25%;transform:translateX(-50%);">06</span>
+      <span class="absolute" style="left:37.5%;transform:translateX(-50%);">09</span>
+      <span class="absolute" style="left:50%;transform:translateX(-50%);">12</span>
+      <span class="absolute" style="left:62.5%;transform:translateX(-50%);">15</span>
+      <span class="absolute" style="left:75%;transform:translateX(-50%);">18</span>
+      <span class="absolute" style="left:87.5%;transform:translateX(-50%);">21</span>
+      <span class="absolute right-0">24</span>
+    </div>
+
+    <!-- Bucket summary with explicit time ranges. -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
       {% for bucket in hour_buckets %}
-        <div class="text-center bg-gray-50 rounded-lg py-2">
-          <div class="text-lg leading-none">{{ bucket.emoji }}</div>
-          <div class="text-xs text-gray-500 mt-1">{{ bucket.label }}</div>
-          <div class="text-sm font-bold mt-0.5">{{ bucket.pct }}%</div>
+        <div class="rounded-lg py-2 px-3 {{ bucket.css }}">
+          <div class="flex items-baseline justify-between">
+            <span class="text-xs font-semibold">{{ bucket.label }}</span>
+            <span class="text-sm font-bold">{{ bucket.pct }}%</span>
+          </div>
+          <div class="text-[10px] opacity-75 mt-0.5">{{ bucket.range_label }}</div>
         </div>
       {% endfor %}
-    </div>
-    <div class="flex items-end gap-px h-20" title="Часы суток, 00 .. 23">
-      {% for bar in hour_bars %}
-        <div class="flex-1 flex flex-col items-center justify-end h-full"
-             title="{{ bar.hour|stringformat:'02d' }}:00 — {{ bar.count }} отметок">
-          <div class="w-full bg-{{ habit.color }}-300 rounded-t hover:bg-{{ habit.color }}-500 transition-colors"
-               style="height: {{ bar.pct }}%"></div>
-        </div>
-      {% endfor %}
-    </div>
-    <div class="flex justify-between mt-1 text-[10px] text-gray-400">
-      <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
     </div>
   {% else %}
     <p class="text-sm text-gray-500 py-4">Пока недостаточно отметок, чтобы найти твоё «лучшее время». Отметь несколько раз и появится статистика.</p>

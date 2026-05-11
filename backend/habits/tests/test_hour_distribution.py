@@ -69,3 +69,31 @@ def test_skipped_logs_excluded(db):
     assert dist['total'] == 1
     assert dist['hours'][8] == 1
     assert dist['hours'][9] == 0
+
+
+def test_best_window_finds_3h_density_peak(db):
+    user = make_user('window')
+    habit = make_habit(user)
+    # Concentrated activity 07:00..09:00 over distinct days.
+    _log_at(habit, hour=7, day_offset=0)
+    _log_at(habit, hour=8, day_offset=1)
+    _log_at(habit, hour=8, day_offset=2)
+    _log_at(habit, hour=9, day_offset=3)
+    # One outlier at midnight.
+    _log_at(habit, hour=0, day_offset=4)
+    dist = habit_hour_distribution(habit, days=30)
+    assert dist['best_window'] is not None
+    assert dist['best_window']['start'] == 7
+    assert dist['best_window']['end_exclusive'] == 10
+    assert dist['best_window']['count'] == 4
+    assert dist['best_window']['label'] == '07:00–09:59'
+
+
+def test_buckets_expose_range_labels(db):
+    user = make_user('ranges')
+    habit = make_habit(user)
+    _log_at(habit, hour=14, day_offset=0)
+    dist = habit_hour_distribution(habit, days=30)
+    day_bucket = next(b for b in dist['buckets'] if b['label'] == 'День')
+    assert day_bucket['range_label'] == '12:00–16:59'
+    assert day_bucket['pct'] == 100

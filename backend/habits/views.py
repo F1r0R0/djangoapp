@@ -562,17 +562,29 @@ def habit_detail(request, habit_id: int):
     # Hour-of-day distribution — "когда я обычно это делаю" over last 90 days.
     hour_dist = habit_hour_distribution(habit, days=90)
     max_hour_count = max(hour_dist['hours']) or 1
+    peak_hour = hour_dist['peak_hour']
+    best_window = hour_dist['best_window']
     hour_bars = [
         {
             'hour': h,
             'count': cnt,
-            'pct': int(100 * cnt / max_hour_count) if cnt else 0,
+            # Reserve a tiny min height for non-empty hours so single logs
+            # are still visible on the chart.
+            'pct': max(int(100 * cnt / max_hour_count), 6 if cnt else 0),
+            'is_peak': (peak_hour is not None and h == peak_hour),
+            'in_window': (
+                best_window is not None
+                and (
+                    (best_window['start'] <= best_window['end_exclusive'] and best_window['start'] <= h < best_window['end_exclusive'])
+                    or (best_window['start'] > best_window['end_exclusive'] and (h >= best_window['start'] or h < best_window['end_exclusive']))
+                )
+            ),
+            'bg': hour_dist['hour_bg'][h],
+            'label': f'{h:02d}:00',
         }
         for h, cnt in enumerate(hour_dist['hours'])
     ]
-    peak_hour_label = None
-    if hour_dist['peak_hour'] is not None:
-        peak_hour_label = f"{hour_dist['peak_hour']:02d}:00"
+    peak_hour_label = f'{peak_hour:02d}:00' if peak_hour is not None else None
 
     context = {
         'habit': habit,
@@ -592,6 +604,7 @@ def habit_detail(request, habit_id: int):
         'peak_hour_label': peak_hour_label,
         'peak_bucket': hour_dist['peak_bucket'],
         'hour_total': hour_dist['total'],
+        'best_window': best_window,
     }
     return render(request, 'habit_detail.html', context)
 

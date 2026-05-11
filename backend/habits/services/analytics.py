@@ -241,11 +241,26 @@ def time_of_day_bucket(time_obj) -> str:
 
 
 _HOUR_BUCKETS = [
-    # (start_hour_inclusive, end_hour_exclusive, label, emoji)
-    (5, 12, 'Утро', '🌅'),
-    (12, 17, 'День', '☀️'),
-    (17, 22, 'Вечер', '🌇'),
-    (22, 29, 'Ночь', '🌙'),  # 22:00..04:59 — handled with wrap-around below.
+    # (start_hour_inclusive, end_hour_exclusive, label, range_label, css)
+    (5, 12, 'Утро', '05:00–11:59', 'bg-yellow-100 text-yellow-800'),
+    (12, 17, 'День', '12:00–16:59', 'bg-orange-100 text-orange-800'),
+    (17, 22, 'Вечер', '17:00–21:59', 'bg-indigo-100 text-indigo-800'),
+    (22, 29, 'Ночь', '22:00–04:59', 'bg-slate-200 text-slate-700'),
+]
+
+# Background tint that paints behind the 24-bar chart so the bucket boundaries
+# are visible without a legend. Indexed by hour-of-day 0..23.
+_HOUR_BG = [
+    # 00..04 → night
+    *['rgba(148,163,184,0.18)'] * 5,
+    # 05..11 → morning (yellow)
+    *['rgba(250,204,21,0.18)'] * 7,
+    # 12..16 → day (orange)
+    *['rgba(251,146,60,0.18)'] * 5,
+    # 17..21 → evening (indigo)
+    *['rgba(99,102,241,0.18)'] * 5,
+    # 22..23 → night
+    *['rgba(148,163,184,0.18)'] * 2,
 ]
 
 
@@ -280,7 +295,7 @@ def habit_hour_distribution(habit: Habit, days: int = 90) -> dict:
         total += 1
 
     buckets: list[dict] = []
-    for start_h, end_h, label, emoji in _HOUR_BUCKETS:
+    for start_h, end_h, label, range_label, css in _HOUR_BUCKETS:
         if end_h > 24:
             count = sum(hours[start_h:24]) + sum(hours[0:end_h - 24])
         else:
@@ -288,7 +303,8 @@ def habit_hour_distribution(habit: Habit, days: int = 90) -> dict:
         buckets.append(
             {
                 'label': label,
-                'emoji': emoji,
+                'range_label': range_label,
+                'css': css,
                 'count': count,
                 'pct': int(100 * count / total) if total else 0,
             }
@@ -299,12 +315,36 @@ def habit_hour_distribution(habit: Habit, days: int = 90) -> dict:
         peak_hour = max(range(24), key=lambda h: hours[h])
     peak_bucket = max(buckets, key=lambda b: b['count'])['label'] if total else None
 
+    # Best 3-hour rolling window (wraps midnight). Used for "Лучшее окно".
+    best_window: dict | None = None
+    if total:
+        best_start = 0
+        best_count = -1
+        for start in range(24):
+            window_count = sum(hours[(start + i) % 24] for i in range(3))
+            if window_count > best_count:
+                best_count = window_count
+                best_start = start
+        if best_count > 0:
+            window_end = (best_start + 3) % 24
+            best_window = {
+                'start': best_start,
+                'end_exclusive': window_end,
+                'count': best_count,
+                'pct': int(100 * best_count / total),
+                'label': (
+                    f"{best_start:02d}:00–{((best_start + 2) % 24):02d}:59"
+                ),
+            }
+
     return {
         'hours': hours,
         'buckets': buckets,
         'peak_hour': peak_hour,
         'peak_bucket': peak_bucket,
         'total': total,
+        'best_window': best_window,
+        'hour_bg': _HOUR_BG,
     }
 
 
