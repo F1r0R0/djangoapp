@@ -57,6 +57,74 @@ class UserProfile(models.Model):
             return 0
         return int(100 * self.xp / self.xp_for_next_level)
 
+    # -----------------------------------------------------------------------
+    # Mascot evolution.
+    #
+    # The hamster has one base PNG, but we overlay accessories (FontAwesome
+    # icons) and tweak filters / glow so it visibly evolves with the user's
+    # progress. ``mascot_stage`` returns a dict describing the current stage
+    # so templates don't have to encode the thresholds.
+    # -----------------------------------------------------------------------
+
+    MASCOT_STAGES = [
+        # (min_level, key, title, accessory icon, accessory css, halo css)
+        (1, 'newborn', 'Хомячок-новичок', '', '', ''),
+        (2, 'student', 'Хомячок-ученик', 'fa-book', 'bg-blue-500 text-white', 'ring-2 ring-blue-200'),
+        (4, 'athlete', 'Хомячок-атлет', 'fa-dumbbell', 'bg-orange-500 text-white', 'ring-2 ring-orange-200'),
+        (8, 'master', 'Хомячок-мастер', 'fa-graduation-cap', 'bg-purple-500 text-white', 'ring-2 ring-purple-200'),
+        (15, 'legend', 'Хомячок-легенда', 'fa-crown', 'bg-yellow-400 text-white', 'ring-4 ring-yellow-200'),
+    ]
+
+    @property
+    def mascot_stage(self) -> dict:
+        stage = self.MASCOT_STAGES[0]
+        for candidate in self.MASCOT_STAGES:
+            if self.level >= candidate[0]:
+                stage = candidate
+        min_level, key, title, icon, icon_css, halo_css = stage
+        # Vibe modifier driven by current streak.
+        if self.current_streak >= 14:
+            vibe = 'stellar'
+            vibe_icon = 'fa-star'
+            vibe_css = 'text-yellow-400'
+        elif self.current_streak >= 5:
+            vibe = 'fire'
+            vibe_icon = 'fa-fire'
+            vibe_css = 'text-orange-500'
+        elif self.current_streak >= 1:
+            vibe = 'spark'
+            vibe_icon = 'fa-bolt'
+            vibe_css = 'text-yellow-500'
+        else:
+            vibe = 'calm'
+            vibe_icon = ''
+            vibe_css = ''
+        # XP-to-next-stage progress so the UI can show a real bar.
+        next_threshold = None
+        for candidate in self.MASCOT_STAGES:
+            if candidate[0] > self.level:
+                next_threshold = candidate
+                break
+        if next_threshold is None:
+            stage_progress_pct = 100
+            next_title = None
+        else:
+            span = next_threshold[0] - min_level
+            stage_progress_pct = int(100 * (self.level - min_level) / span) if span else 0
+            next_title = next_threshold[2]
+        return {
+            'key': key,
+            'title': title,
+            'icon': icon,
+            'icon_css': icon_css,
+            'halo_css': halo_css,
+            'vibe': vibe,
+            'vibe_icon': vibe_icon,
+            'vibe_css': vibe_css,
+            'next_title': next_title,
+            'stage_progress_pct': max(0, min(stage_progress_pct, 100)),
+        }
+
 
 # ---------------------------------------------------------------------------
 # Tags / categories / activity types.
