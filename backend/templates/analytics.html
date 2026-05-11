@@ -17,7 +17,7 @@
 
 <div class="grid lg:grid-cols-3 gap-6 mb-6 stagger">
   <!-- Highlight insight card (amber/orange to match prototype) -->
-  <div class="lg:col-span-2 glass-card p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-orange-400 relative overflow-hidden lift">
+  <div class="lg:col-span-2 glass-card hero-shimmer p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-orange-400 relative overflow-hidden lift">
     <div class="flex flex-col sm:flex-row sm:items-start gap-4">
       <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
         <i class="fas fa-lightbulb text-orange-600 text-xl"></i>
@@ -87,13 +87,15 @@
       <p class="text-xs text-gray-500">Ежедневные выполнения за {{ days }} дней</p>
     </div>
     <div class="text-right">
-      <div class="text-2xl font-bold">{{ avg_completion }}%</div>
+      <div class="text-2xl font-bold">
+        <span data-count-to="{{ avg_completion }}" data-count-suffix="%">0%</span>
+      </div>
       <div class="text-xs text-gray-400 uppercase">средняя стабильность</div>
     </div>
   </div>
   <div class="h-40 flex items-end gap-1">
     {% for bar in chart_bars %}
-      <div class="flex-1 bg-green-200 rounded-t intensity-bar hover:bg-green-300"
+      <div class="flex-1 bg-green-200 hover:bg-green-400 rounded-t intensity-bar chart-bar-fancy transition-colors"
            style="height: 0%"
            data-bar-height="{{ bar.height_pct }}"
            title="{{ bar.date|date:'j E' }} — {{ bar.count }}"></div>
@@ -116,10 +118,13 @@
         <div>
           <div class="flex justify-between text-sm mb-1">
             <span>{{ d.name }}</span>
-            <span class="font-semibold">{{ d.rate }}%</span>
+            <span class="font-semibold">
+              <span data-count-to="{{ d.rate }}" data-count-suffix="%">0%</span>
+            </span>
           </div>
           <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div class="h-full bg-green-500 progress-fill" style="width: 0%" data-progress="{{ d.rate }}"></div>
+            <div class="h-full bg-gradient-to-r from-green-400 to-green-600 progress-fill"
+                 style="width:0%" data-progress="{{ d.rate }}"></div>
           </div>
         </div>
       {% endfor %}
@@ -136,10 +141,10 @@
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger">
       {% for entry in achievements_data %}
-        <div class="text-center transition-transform hover:scale-105 {% if not entry.unlocked %}opacity-40{% endif %}">
-          <div class="w-14 h-14 mx-auto rounded-full flex items-center justify-center
-              {% if entry.unlocked %}{{ entry.badge_bg }}{% else %}bg-gray-100{% endif %}">
-            <i class="fas fa-{{ entry.achievement.icon|default:'medal' }} text-xl
+        <div class="text-center transition-transform hover:-translate-y-1 wiggle-hover {% if not entry.unlocked %}opacity-40{% endif %}">
+          <div class="w-14 h-14 mx-auto rounded-full flex items-center justify-center shadow-sm
+              {% if entry.unlocked %}{{ entry.badge_bg }} soft-float{% else %}bg-gray-100{% endif %}">
+            <i class="fas fa-{{ entry.achievement.icon|default:'medal' }} text-xl wiggle-target
               {% if entry.unlocked %}{{ entry.badge_fg }}{% else %}text-gray-400{% endif %}"></i>
           </div>
           <div class="text-xs font-semibold mt-2">{{ entry.achievement.title }}</div>
@@ -159,14 +164,16 @@
       </div>
       <span class="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-semibold">за {{ days }} дней</span>
     </div>
-    <ul class="space-y-3">
+    <ul class="space-y-3 stagger">
       {% for pair in correlations %}
-        <li class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50">
+        <li class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 corr-sweep transition-transform hover:-translate-y-0.5">
           <div class="flex-1 text-sm">
             Когда ты выполняешь
             <span class="font-semibold">«{{ pair.a_title }}»</span>,
             ты в
-            <span class="font-bold text-blue-700">{{ pair.conditional_pct }}%</span>
+            <span class="font-bold text-blue-700">
+              <span data-count-to="{{ pair.conditional_pct }}" data-count-suffix="%">0%</span>
+            </span>
             случаев в тот же день делаешь
             <span class="font-semibold">«{{ pair.b_title }}»</span>.
           </div>

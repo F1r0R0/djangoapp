@@ -96,20 +96,20 @@
   <div class="glass-card p-5 lift">
     <div class="text-green-600 mb-2"><i class="fas fa-percent"></i></div>
     <div class="text-sm text-gray-500">Процент выполнения</div>
-    <div class="text-3xl font-bold mt-1">{{ completion_pct_30 }}<span class="text-base text-gray-400">%</span></div>
+    <div class="text-3xl font-bold mt-1"><span data-count-to="{{ completion_pct_30 }}">0</span><span class="text-base text-gray-400">%</span></div>
     <div class="text-xs text-gray-400 mt-1">за 30 дней</div>
   </div>
   <div class="glass-card p-5 lift">
     <div class="text-blue-500 mb-2"><i class="fas fa-clock"></i></div>
     <div class="text-sm text-gray-500">Общее время</div>
-    <div class="text-3xl font-bold mt-1">{{ total_minutes }}<span class="text-base text-gray-400"> мин</span></div>
-    <div class="text-xs text-gray-400 mt-1">{{ completed_count }} сессий завершено</div>
+    <div class="text-3xl font-bold mt-1"><span data-count-to="{{ total_minutes }}">0</span><span class="text-base text-gray-400"> мин</span></div>
+    <div class="text-xs text-gray-400 mt-1"><span data-count-to="{{ completed_count }}">0</span> сессий завершено</div>
   </div>
   <div class="glass-card p-5 lift">
     <div class="text-orange-500 mb-2"><i class="fas fa-fire-flame-curved streak-pulse"></i></div>
     <div class="text-sm text-gray-500">Лучшая серия</div>
-    <div class="text-3xl font-bold mt-1">{{ best_streak }}<span class="text-base text-gray-400"> дн</span></div>
-    <div class="text-xs text-gray-400 mt-1">Текущая серия: {{ current_streak }} дн</div>
+    <div class="text-3xl font-bold mt-1"><span data-count-to="{{ best_streak }}">0</span><span class="text-base text-gray-400"> дн</span></div>
+    <div class="text-xs text-gray-400 mt-1">Текущая серия: <span data-count-to="{{ current_streak }}">0</span> дн</div>
   </div>
   <div class="glass-card p-5 bg-gradient-to-br from-green-200 to-green-50 relative overflow-hidden lift">
     <div class="text-sm text-gray-700 font-semibold">Совет маскота</div>
@@ -129,8 +129,9 @@
   </div>
   <div class="flex items-end gap-2 h-32">
     {% for bar in intensity_bars %}
-      <div class="flex-1 flex flex-col items-center justify-end h-full" title="{{ bar.label }} — {{ bar.minutes }} мин">
-        <div class="w-full bg-{{ habit.color }}-300 rounded-t intensity-bar hover:bg-{{ habit.color }}-400"
+      <div class="flex-1 flex flex-col items-center justify-end h-full group" title="{{ bar.label }} — {{ bar.minutes }} мин">
+        <div class="w-full rounded-t chart-bar-fancy intensity-bar transition-colors
+                    bg-{{ habit.color }}-300 group-hover:bg-{{ habit.color }}-500"
              style="height: 0%"
              data-bar-height="{{ bar.pct }}"></div>
       </div>
@@ -169,21 +170,21 @@
   {% if hour_total %}
     <!-- Chart with colored bucket bands behind the bars. -->
     <div class="relative h-40 mb-1">
-      <!-- Bars (foreground) -->
+      <!-- Bars (foreground). data-bar-height triggers the bottom-up grow. -->
       <div class="absolute inset-0 flex items-end gap-px">
         {% for bar in hour_bars %}
           <div class="relative flex-1 flex flex-col items-center justify-end h-full group"
                style="background-color: {{ bar.bg }};"
                title="{{ bar.label }} — {{ bar.count }} отметок">
             {% if bar.is_peak and bar.count %}
-              <span class="absolute -top-5 text-[10px] font-bold text-green-700 whitespace-nowrap">
+              <span class="absolute -top-5 text-[10px] font-bold text-green-700 whitespace-nowrap soft-float">
                 {{ bar.label }}
               </span>
             {% endif %}
             {% if bar.count %}
-              <div class="w-full rounded-t transition-colors
-                   {% if bar.is_peak %}bg-green-600 ring-2 ring-green-300{% elif bar.in_window %}bg-green-400{% else %}bg-{{ habit.color }}-300 group-hover:bg-{{ habit.color }}-500{% endif %}"
-                   style="height: {{ bar.pct }}%"></div>
+              <div class="bar-grow chart-bar-fancy w-full rounded-t
+                   {% if bar.is_peak %}bg-green-600 ring-2 ring-green-300 peak-pulse{% elif bar.in_window %}bg-green-400{% else %}bg-{{ habit.color }}-300 group-hover:bg-{{ habit.color }}-500 transition-colors{% endif %}"
+                   data-bar-height="{{ bar.pct }}"></div>
             {% endif %}
           </div>
         {% endfor %}
@@ -204,12 +205,13 @@
     </div>
 
     <!-- Bucket summary with explicit time ranges. -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 stagger">
       {% for bucket in hour_buckets %}
-        <div class="rounded-lg py-2 px-3 {{ bucket.css }}">
+        <div class="rounded-lg py-2 px-3 transition-transform hover:-translate-y-0.5 {{ bucket.css }}">
           <div class="flex items-baseline justify-between">
             <span class="text-xs font-semibold">{{ bucket.label }}</span>
-            <span class="text-sm font-bold">{{ bucket.pct }}%</span>
+            <span class="text-sm font-bold"
+                  data-count-to="{{ bucket.pct }}" data-count-suffix="%">0%</span>
           </div>
           <div class="text-[10px] opacity-75 mt-0.5">{{ bucket.range_label }}</div>
         </div>
