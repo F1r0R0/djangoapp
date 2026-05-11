@@ -164,16 +164,14 @@
       </div>
       <span class="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-semibold">за {{ days }} дней</span>
     </div>
-    <ul class="space-y-3 stagger">
+    <ul class="space-y-3">
       {% for pair in correlations %}
-        <li class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 corr-sweep transition-transform hover:-translate-y-0.5">
+        <li class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50">
           <div class="flex-1 text-sm">
             Когда ты выполняешь
             <span class="font-semibold">«{{ pair.a_title }}»</span>,
             ты в
-            <span class="font-bold text-blue-700">
-              <span data-count-to="{{ pair.conditional_pct }}" data-count-suffix="%">0%</span>
-            </span>
+            <span class="font-bold text-blue-700">{{ pair.conditional_pct }}%</span>
             случаев в тот же день делаешь
             <span class="font-semibold">«{{ pair.b_title }}»</span>.
           </div>
