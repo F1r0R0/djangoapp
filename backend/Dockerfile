@@ -17,5 +17,10 @@ COPY ./requirements.txt ./
 RUN pip install uv && uv pip install --system --no-cache-dir -r requirements.txt
 COPY ./ ./
 
-CMD [ "/backend/.dockerinit.sh" ]
 EXPOSE 8000
+
+# Default command runs migrations then gunicorn. docker-compose.prod.yml
+# overrides this with a longer boot sequence (collectstatic, seed_taxonomy,
+# create superuser), so this default is only the bare minimum useful when
+# the image is run standalone.
+CMD ["bash", "-lc", "python manage.py migrate --noinput && exec gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60"]

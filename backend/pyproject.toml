@@ -2,8 +2,7 @@
 name = 'habithamster'
 version = '0.1.0'
 requires-python = '>=3.12'
-# Mirror of requirements.txt (Vercel reads dependencies from pyproject.toml when
-# present; requirements.txt is still used by the Docker dev container).
+# Mirrors requirements.txt; the Docker image installs from requirements.txt.
 dependencies = [
     'asgiref==3.11.1',
     'Django==6.0.4',
@@ -14,7 +13,7 @@ dependencies = [
     'Pillow==11.0.0',
     'whitenoise==6.12.0',
     'requests==2.32.3',
-    'vercel_blob==0.4.2',
+    'gunicorn==23.0.0',
 ]
 
 [project.optional-dependencies]
@@ -25,16 +24,6 @@ dev = [
 
 [tool.setuptools]
 py-modules = []
-
-# Vercel deployment configuration.
-# Vercel auto-detects Django via manage.py and reads WSGI_APPLICATION from
-# settings.py. The build script seeds a SQLite DB so the deployed app has data
-# (and an admin/admin superuser) on first request.
-[tool.vercel]
-entrypoint = 'core.wsgi:application'
-
-[tool.vercel.scripts]
-build = 'python build.py'
 
 [tool.isort]
 profile = 'black'

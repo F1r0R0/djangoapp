@@ -1,28 +1,22 @@
 """
 Django settings for HabitHamster.
 
-Supports three run modes:
+Supports two run modes:
 
 1. Local quick-start (default): SQLite, no .environment file required.
-2. Docker / production-like: reads .environment file with DB_* variables and
+2. Docker / production: reads DB_* env vars (or a .environment file) and
    uses PostgreSQL.
-3. Vercel (serverless): SQLite copied to /tmp at runtime; auto-detected via
-   the ``VERCEL`` environment variable that Vercel injects.
 
-The flag `USE_SQLITE` (env or default `True` when no DB_NAME env var) selects
-the engine.
+The flag ``USE_SQLITE`` (env or default ``True`` when no ``DB_NAME`` env var)
+selects the engine.
 """
 
-import os
 from pathlib import Path
 
 import environ
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Vercel injects VERCEL=1 in build & runtime sandboxes.
-IS_VERCEL = bool(os.environ.get('VERCEL'))
 
 env = environ.Env(
     DEBUG=(bool, True),
@@ -44,20 +38,12 @@ if env_file.exists():
 
 
 SECRET_KEY = env('SECRET_KEY')
-DEBUG = False if IS_VERCEL else env('DEBUG')
+DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
-if IS_VERCEL:
-    # Vercel deployments are served from <project>.vercel.app and any custom
-    # domains. Allow them all; the platform terminates TLS in front of us.
-    ALLOWED_HOSTS = ['.vercel.app', '.now.sh', 'localhost', '127.0.0.1']
-    CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-else:
-    # Outside Vercel (Docker / VPS): allow operators to add HTTPS-eligible
-    # origins via the CSRF_TRUSTED_ORIGINS env var (comma-separated).
-    csrf_origins = env('CSRF_TRUSTED_ORIGINS')
-    if csrf_origins:
-        CSRF_TRUSTED_ORIGINS = csrf_origins
+# HTTPS-eligible origins (with scheme) for CSRF — comma-separated env var.
+csrf_origins = env('CSRF_TRUSTED_ORIGINS')
+if csrf_origins:
+    CSRF_TRUSTED_ORIGINS = csrf_origins
 
 
 INSTALLED_APPS = [
@@ -73,17 +59,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    # MUST be the OUTERMOST middleware: process_response runs in reverse order,
-    # so being first here means we push to Blob LAST — i.e. after
-    # SessionMiddleware has flushed the new session row to /tmp/db.sqlite3.
-    # Putting it any later (e.g. at the bottom of the list) means we'd upload
-    # the DB before the session is committed, and users would silently get
-    # logged out on the next cold start.
-    'core.middleware.BlobDBSyncMiddleware',
     'django.middleware.security.SecurityMiddleware',
     # Serve collected /static/ files via WSGI. In DEBUG mode WhiteNoise no-ops
-    # (Django's runserver serves them); in production (Docker behind nginx,
-    # Vercel function) it serves STATIC_ROOT directly so /static/admin/* works.
+    # (Django's runserver serves them); in production (Docker behind nginx)
+    # it serves STATIC_ROOT directly so /static/admin/* works.
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -115,16 +94,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 
 # Database — SQLite by default for easy local dev, Postgres when DB_NAME is set.
-# On Vercel the bundled db.sqlite3 (built at deploy time by build.py) is copied
-# to /tmp at startup so Django can write sessions/admin data to it.
-if IS_VERCEL:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.environ.get('SQLITE_PATH', '/tmp/db.sqlite3'),
-        }
-    }
-elif env('USE_SQLITE') or not env('DB_NAME'):
+if env('USE_SQLITE') or not env('DB_NAME'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -164,22 +134,13 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
-# When deployed on Vercel (with a Blob read/write token) user-uploaded media
-# goes to Vercel Blob so files survive function cold starts. Local/Docker dev
-# keeps the existing FileSystemStorage behaviour.
-_DEFAULT_STORAGE_BACKEND = (
-    'core.blob_storage.BlobMediaStorage'
-    if os.environ.get('BLOB_READ_WRITE_TOKEN')
-    else 'django.core.files.storage.FileSystemStorage'
-)
 
 STORAGES = {
     'default': {
-        'BACKEND': _DEFAULT_STORAGE_BACKEND,
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
-    # Compressed (gzip/brotli) but non-manifested storage so the same
-    # collectstatic output works whether build-time DEBUG/IS_VERCEL flags differ
-    # from runtime ones.
+    # Compressed (gzip/brotli) but non-manifested storage so collectstatic
+    # output is portable across DEBUG values.
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
